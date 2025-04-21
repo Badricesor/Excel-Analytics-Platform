@@ -7,7 +7,6 @@ function App() {
       <div>
         <h1>Hello Team..!</h1>
       </div>
-      
     </>
   )
 }
