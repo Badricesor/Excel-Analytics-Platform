@@ -1,14 +1,15 @@
-import React from 'react'
-import './App.css'
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Signup } from "./pages/Signup.jsx"
 
 function App() {
   return (
-    <>
-      <div>
-        <h1>Hello Team..!</h1>
-      </div>
-    </>
-  )
+    <Router>
+      <Routes>
+        <Route path="/Excel-Analytics-Platform/signup" element={<Signup/>} />
+        
+      </Routes>
+    </Router>
+  );
 }
 
-export default App
+export default App;
