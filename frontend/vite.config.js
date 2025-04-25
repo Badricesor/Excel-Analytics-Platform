@@ -5,9 +5,4 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   base: "/Excel-Analytics-Platform/",
   plugins: [react()],
-  css:{
-    postcss:{
-      config: './postcss.config.mjs',
-    }
-  }
 })
