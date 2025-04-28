@@ -27,7 +27,7 @@ export default function Login() {
     <div className="flex justify-center items-center min-h-screen bg-gray-900 dark:bg-black-800 p-8">
       <div className="bg-white bg-opacity-10   p-8 rounded-lg shadow-lg max-w-sm w-full">
       <img src="logo.png" alt="Logo" className="w-24 mx-auto mb-4" />
-        <h2 className="text-2xl font-bold text-center mb-6 text-white">Login to Your Account</h2>
+        <h2 className="text-2xl font-bold text-center mb-6 ">Login to Your Account</h2>
 
         {error && <div className="bg-red-100 text-red-700 p-2 rounded mb-4">{error}</div>}
 
@@ -66,10 +66,10 @@ export default function Login() {
         </form>
 
         <div className="flex justify-between text-sm text-gray-600 mt-4">
-          <Link to="/forgot-password" className="text-white hover:underline">
+          <Link to="/forgot-password" className="text-red-500 hover:underline">
             Forgot Password?
           </Link>
-          <Link to="/Excel-Analytics-Platform/signup" className="text-white hover:underline">
+          <Link to="/Excel-Analytics-Platform/signup" className="text-red-500 hover:underline">
             Create Account
           </Link>
         </div>

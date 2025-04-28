@@ -17,6 +17,7 @@ const Signup = () => {
       localStorage.setItem('token', response.data.token);
       window.location.href = '/dashboard';
     } catch (err) {
+      console.error(error)
       setError('Registration failed');
     }
   };
@@ -25,7 +26,7 @@ const Signup = () => {
     <div className="flex justify-center items-center min-h-screen bg-gray-900 dark:bg-black-800 p-8">
       <div className="bg-white bg-opacity-10   p-8 rounded-lg shadow-lg max-w-sm w-full">
         <img src="logo.png" alt="Logo" className="w-24 mx-auto mb-4" />
-        <h2 className="text-2xl  text-white font-semibold text-center mb-6">Create an Account</h2>
+        <h2 className="text-2xl  font-semibold text-center mb-6">Create an Account</h2>
         {error && <p className="text-blue-500 text-center mb-4">{error}</p>}
         <form onSubmit={handleSubmit}>
           <input
@@ -60,7 +61,7 @@ const Signup = () => {
           </button>
         </form>
         <div className="mt-4 text-center">
-          <a href="/Excel-Analytics-Platform/login" className="text-white hover:underline">Already have an account? Login</a>
+          <a href="/Excel-Analytics-Platform/login" className="text-red-500 hover:underline">Already have an account? Login</a>
         </div>
       </div>
     </div>

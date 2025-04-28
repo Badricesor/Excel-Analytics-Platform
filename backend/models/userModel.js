@@ -20,8 +20,20 @@ const userSchema= mongoose.Schema({
         enum:["user","admin"],
         default:"user"
     },
-},
-    {timestamps: true}
+    uploadHistory: [
+        {
+          fileId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Upload',
+          },
+          analysisDetails: Object, // Store details of analysis performed
+          timestamp: {
+            type: Date,
+            default: Date.now,
+          },
+        },
+      ],
+}
 )
 
 export const User= mongoose.model("User",userSchema)

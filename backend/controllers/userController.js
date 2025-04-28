@@ -1,0 +1,74 @@
+import User from '../models/User.js';
+import Upload from '../models/Upload.js';
+
+// @desc    Get user profile
+// @route   GET /api/users/profile
+// @access  Private
+const getUserProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select('-password').populate('uploadHistory.fileId', 'filename uploadDate dataSize');
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Get all users (admin only)
+// @route   GET /api/admin/users
+// @access  Private (Admin)
+const getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find().select('-password');
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Delete a user (admin only)
+// @route   DELETE /api/admin/users/:id
+// @access  Private (Admin)
+const deleteUser = async (req, res) => {
+  try {
+    const user = await User.findByIdAndDelete(req.params.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    // Optionally delete their uploads as well
+    await Upload.deleteMany({ userId: req.params.id });
+    res.json({ message: 'User deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Get all uploads (admin only)
+// @route   GET /api/admin/uploads
+// @access  Private (Admin)
+const getAllUploads = async (req, res) => {
+  try {
+    const uploads = await Upload.find().populate('userId', 'username email');
+    res.json(uploads);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Delete an upload (admin only)
+// @route   DELETE /api/admin/uploads/:id
+// @access  Private (Admin)
+const deleteUpload = async (req, res) => {
+  try {
+    const upload = await Upload.findByIdAndDelete(req.params.id);
+    if (!upload) {
+      return res.status(404).json({ message: 'Upload not found' });
+    }
+    // Optionally delete the file from the server as well
+    // fs.unlinkSync(upload.filePath);
+    res.json({ message: 'Upload deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export { getUserProfile, getAllUsers, deleteUser, getAllUploads, deleteUpload };
