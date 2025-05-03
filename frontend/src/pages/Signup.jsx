@@ -1,71 +1,163 @@
-import React, { useState } from 'react';
-import axios from 'axios';
+import React, { useState, useContext } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import AuthContext from '../context/AuthContext';
+import logo from "../../public/logo.png"
+import { Button } from '@/components/ui/button'; // Assuming you're using shadcn/ui or similar
+import { cn } from '@/lib/utils'; // Utility for combining class names
 
-const Signup = () => {
-  const [formData, setFormData] = useState({ username: '', email: '', password: '' });
+const SignUp = () => {
+  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [role, setRole] = useState('user');
   const [error, setError] = useState('');
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-  };
+  const { signup } = useContext(AuthContext);
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
     try {
-      const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/login`, formData);
-      localStorage.setItem('token', response.data.token);
-      window.location.href = '/dashboard';
+      await signup(username, email, password, role);
+      if (role === 'admin') {
+        navigate('/AdminDashboard');
+      } else {
+        navigate('/UserDashboard');
+      }
     } catch (err) {
-      console.error(error)
-      setError('Registration failed');
+      setError(err);
     }
   };
 
+  const handleGoogleLogin = () => {
+    // Implement Google login logic here (using a library like @react-oauth/google)
+    console.log('Google login clicked');
+    // Placeholder:  You'd typically redirect to Google's auth flow,
+    // then handle the callback and create/login the user.
+  };
+
+  const handleFacebookLogin = () => {
+    // Implement Facebook login logic here (using a library like react-facebook-login)
+    console.log('Facebook login clicked');
+    // Placeholder: Similar to Google, redirect to Facebook,
+    // handle callback, and create/login user.
+  };
+
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gray-900 dark:bg-black-800 p-8">
-      <div className="bg-white bg-opacity-10   p-8 rounded-lg shadow-lg max-w-sm w-full">
-        <img src="logo.png" alt="Logo" className="w-24 mx-auto mb-4" />
-        <h2 className="text-2xl  font-semibold text-center mb-6">Create an Account</h2>
-        {error && <p className="text-blue-500 text-center mb-4">{error}</p>}
-        <form onSubmit={handleSubmit}>
-          <input
-            type="text"
-            name="username"
-            placeholder="Username"
-            value={formData.username}
-            onChange={handleChange}
-            className="w-full p-2 mb-4 border border-gray-300 rounded-lg "
-            required
-          />
-          <input
-            type="email"
-            name="email"
-            placeholder="Email"
-            value={formData.email}
-            onChange={handleChange}
-            className="w-full p-2 mb-4 border border-gray-300 rounded-lg "
-            required
-          />
-          <input
-            type="password"
-            name="password"
-            placeholder="Password"
-            value={formData.password}
-            onChange={handleChange}
-            className="w-full p-2 mb-4 border border-gray-300 rounded-lg"
-            required
-          />
-          <button type="submit" className="w-full py-2 bg-red-600 text-white rounded hover:bg-indigo-700">
-            Register
-          </button>
+    
+    <div className="flex justify-center items-center min-h-screen bg-gray-900 dark:bg-black-800 ">
+
+      <header className="absolute top-0 left-0 p-6 flex items-center">
+        {logo && <img src={logo} alt="Logo" className="h-8 w-auto mr-3" />}
+        <h1 className="text-m font-semibold text-red-400">Excel Analytics Platform</h1>
+      </header>
+
+      {/* input box */}
+      <div className=" rounded-3xl px-8 py-6 mt-6 p-8 text-left bg-white bg-opacity-10 shadow-lg w-full max-w-md">
+        <h3 className="text-2xl font-bold text-center mb-4">Sign Up</h3>
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="username">
+              Username
+            </label>
+            <input
+              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              id="username"
+              type="text"
+              placeholder="Username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="email">
+              Email
+            </label>
+            <input
+              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              id="email"
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="password">
+              Password
+            </label>
+            <input
+              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              id="password"
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="role">
+              Role
+            </label>
+            <select
+              id="role"
+              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+            >
+              <option value="user">User</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+          <div className="mt-6">
+            <Button
+              type="submit"
+              className={cn(
+                "w-full", // Make button take full width
+                "bg-red-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+              )}
+            >
+              Sign Up
+            </Button>
+            <Link
+              to="/login"
+              className="block text-center mt-4 align-baseline font-semibold text-sm text-blue-500 hover:text-red-500"
+            >
+              Already have an account? Login
+            </Link>
+          </div>
         </form>
-        <div className="mt-4 text-center">
-          <a href="/Excel-Analytics-Platform/login" className="text-red-500 hover:underline">Already have an account? Login</a>
+
+        <div className="mt-4">
+          <div className="flex items-center justify-center">
+            <div className="border-t border-gray-300 flex-grow mr-3"></div>
+            <span className="text-gray-500 text-sm">Or sign up with</span>
+            <div className="border-t border-gray-300 flex-grow ml-3"></div>
+          </div>
+          <div className="mt-2  flex justify-center space-x-4">
+            <Button
+              variant="outline"
+              onClick={handleGoogleLogin}
+              className="px-4 text-red-700 py-2 hover:text-blue-700 rounded-full"
+            >
+              Google
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleFacebookLogin}
+              className="px-4 py-2 text-red-700 hover:text-blue-700 rounded-full"
+            >
+              Facebook
+            </Button>
+          </div>
         </div>
       </div>
     </div>
   );
 };
 
-export default Signup;
+export default SignUp;

@@ -14,7 +14,7 @@ function WelcomePage() {
 
     // Redirect to signup page after a delay
     const redirectTimer = setTimeout(() => {
-      navigate('/Excel-Analytics-Platform/signup'); // Replace '/signup' with your actual signup route
+      navigate('/signup'); // Replace '/signup' with your actual signup route
     }, 3000); // Adjust delay before redirect
 
     return () => {
@@ -26,7 +26,7 @@ function WelcomePage() {
   return (
     <div className="bg-gray-900 dark:bg-black-800 flex flex-col items-center justify-center h-screen">
       <div className="mb-6">
-        <img src="logo.png" alt="Logo" className="h-24 w-auto" /> {/* Adjust logo size as needed */}
+        <img src="logo.png" alt="Logo" className="h-24 w-auto" /> 
       </div>
       <div className={`text-white dark:text-gray-200 text-[24px] font-semibold transition-opacity duration-500 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
         Excel Analytics Platform

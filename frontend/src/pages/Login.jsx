@@ -1,79 +1,80 @@
-// /client/src/pages/Login.jsx
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
+import React, { useState, useContext } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import AuthContext from '../context/AuthContext.jsx';
+import logo from "../../public/logo.png"
 
-export default function Login() {
+const Login = () => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const { login } = useContext(AuthContext);
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({ email: "", password: "" });
-  const [error, setError] = useState("");
-
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
     try {
-      const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/login`, formData);
-      localStorage.setItem("token", res.data.token);
-      navigate("/dashboard"); // redirect after login
+      await login(email, password);
+      navigate('/user/dashboard');
     } catch (err) {
-      setError(err.response?.data?.message || "Login failed");
+      setError(err);
     }
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gray-900 dark:bg-black-800 p-8">
-      <div className="bg-white bg-opacity-10   p-8 rounded-lg shadow-lg max-w-sm w-full">
-      <img src="logo.png" alt="Logo" className="w-24 mx-auto mb-4" />
-        <h2 className="text-2xl font-bold text-center mb-6 ">Login to Your Account</h2>
-
-        {error && <div className="bg-red-100 text-red-700 p-2 rounded mb-4">{error}</div>}
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-           
+    <div className="flex justify-center items-center min-h-screen bg-gray-900 dark:bg-black-800">
+      
+            <header className="absolute top-0 left-0 p-6 flex items-center">
+              {logo && <img src={logo} alt="Logo" className="h-8 w-auto mr-3" />}
+              <h1 className="text-m font-semibold text-red-400">Excel Analytics Platform</h1>
+            </header>
+      
+      <div className="rounded-3xl px-8 py-6 mt-6 p-8 text-left bg-white bg-opacity-10 shadow-lg w-full max-w-md">
+        <h3 className="text-2xl font-bold text-center">Log In</h3>
+        <form onSubmit={handleSubmit}>
+          <div className="mt-4">
+            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="email">
+              Email
+            </label>
             <input
-            type="email"
-            name="email"
-            placeholder="Email"
-            value={formData.email}
-            onChange={handleChange}
-            className="w-full p-2 mb-4 border text-gray-700 border-gray-300 rounded-lg "
-            required
-          />
-          </div>
-
-          <div>
-            <input
-              type="password"
-              name="password"
-              placeholder="password"
-              className="w-full p-2 mb-4 border border-gray-300 rounded-lg "
-              value={formData.password}
-              onChange={handleChange}
+              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              id="email"
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               required
             />
           </div>
-
-          <button
-            type="submit"
-            className="w-full py-2 bg-red-600 text-white rounded hover:bg-indigo-700"
-          >
-            Login
-          </button>
+          <div className="mt-4">
+            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="password">
+              Password
+            </label>
+            <input
+              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              id="password"
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
+          <div className=" mt-6">
+            <button
+              className="w-full bg-red-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+              type="submit"
+            >
+              Log In
+            </button>
+            <Link to="/signup" className="block text-center mt-4 align-baseline font-semibold text-sm text-blue-500 hover:text-red-500">
+              Don't have an account? Sign Up
+            </Link>
+          </div>
         </form>
-
-        <div className="flex justify-between text-sm text-gray-600 mt-4">
-          <Link to="/forgot-password" className="text-red-500 hover:underline">
-            Forgot Password?
-          </Link>
-          <Link to="/Excel-Analytics-Platform/signup" className="text-red-500 hover:underline">
-            Create Account
-          </Link>
-        </div>
       </div>
     </div>
   );
-}
+};
+
+export default Login;

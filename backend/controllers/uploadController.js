@@ -2,7 +2,7 @@ import multer from 'multer';
 import path from 'path';
 import XLSX from 'xlsx';
 import Upload from '../models/Upload.js';
-import User from '../models/User.js';
+import User from '../models/userModel.js';
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
