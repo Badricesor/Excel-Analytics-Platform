@@ -1,37 +1,28 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import './index.css';
+import { Routes, Route } from 'react-router-dom';
 import React from 'react';
-import  Signup  from "./pages/Signup.jsx"
-import  UserDashboard  from './pages/UserDashboard.jsx';
+import Signup from './pages/Signup.jsx';
+import UserDashboard from './pages/UserDashboard.jsx';
 import Login from './pages/Login.jsx';
 import WelcomePage from './pages/WelcomePage.jsx';
 import AdminDashboard from './pages/AdminDashboard.jsx';
-import AuthContext from './context/AuthContext.jsx';
+import { AuthProvider } from './context/AuthContext.jsx';
 import ProfilePage from './pages/ProfilePage.jsx';
+import ProtectedRoute from './components/ProtectedRoute.jsx'; // Import it
+import AdminProtectedRoute from './components/AdminprotectedRoute.jsx'; // Import it
 
 function App() {
   return (
-    <Router>
+    <AuthProvider>
       <Routes>
-       <Route path="/Excel-Analytics-Platform" element={<WelcomePage/>} /> 
-        <Route path="/signup" element={<Signup/>} />
-        <Route path="/login" element={<Login/>} />
+        <Route path="/" element={<WelcomePage />} />
+        <Route path="/signup" element={<Signup />} />
+        <Route path="/login" element={<Login />} />
         <Route path="/user/dashboard" element={<ProtectedRoute><UserDashboard /></ProtectedRoute>} />
         <Route path="/admin/dashboard" element={<AdminProtectedRoute><AdminDashboard /></AdminProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
       </Routes>
-    </Router>
+    </AuthProvider>
   );
 }
-
-const ProtectedRoute = ({ children }) => {
-  const { user } = React.useContext(AuthContext);
-  return user ? children : <Navigate to="/login" />;
-};
-
-const AdminProtectedRoute = ({ children }) => {
-  const { user } = React.useContext(AuthContext);
-  return user && user.role === 'admin' ? children : <Navigate to="/login" />;
-};
 
 export default App;

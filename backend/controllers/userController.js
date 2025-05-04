@@ -2,20 +2,26 @@ import User from '../models/userModel.js';
 import Upload from '../models/Upload.js';
 
 // @desc    Get user profile
-// @route   GET /api/users/profile
-// @access  Private
 const getUserProfile = async (req, res) => {
+
+  console.log('*** getUserProfile Controller Start ***');
+  console.log('req.user:', req.user);
+  
   try {
-    const user = await User.findById(req.user._id).select('-password').populate('uploadHistory.fileId', 'filename uploadDate dataSize');
+    const user = await User.findById(req.user.id).select('-password').populate('uploadHistory.fileId', 'filename originalname');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    console.log('User profile fetched:', user);
     res.json(user);
+    console.log('*** getUserProfile Controller End - Success ***');
   } catch (error) {
+    console.error('*** getUserProfile Controller Error ***:', error);
     res.status(500).json({ message: error.message });
+    console.log('*** getUserProfile Controller End - Error ***');
   }
 };
-
 // @desc    Get all users (admin only)
-// @route   GET /api/admin/users
-// @access  Private (Admin)
 const getAllUsers = async (req, res) => {
   try {
     const users = await User.find().select('-password');
@@ -24,10 +30,7 @@ const getAllUsers = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-
 // @desc    Delete a user (admin only)
-// @route   DELETE /api/admin/users/:id
-// @access  Private (Admin)
 const deleteUser = async (req, res) => {
   try {
     const user = await User.findByIdAndDelete(req.params.id);
@@ -43,8 +46,6 @@ const deleteUser = async (req, res) => {
 };
 
 // @desc    Get all uploads (admin only)
-// @route   GET /api/admin/uploads
-// @access  Private (Admin)
 const getAllUploads = async (req, res) => {
   try {
     const uploads = await Upload.find().populate('userId', 'username email');

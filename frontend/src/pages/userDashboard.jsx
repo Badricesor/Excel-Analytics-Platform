@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import AuthContext from '../context/AuthContext.jsx';
-import FileUpload from '../components/FileUpload.jsx';
+// import AuthContext from '../context/AuthContext.jsx';
+// import FileUpload from '../components/FileUpload.jsx';
 import AnalysisForm from '../components/AnalysisForm.jsx';
 import ChartDisplay from '../components/ChartDisplay.jsx';
 import useAuth from '../hooks/useAuth.js';
@@ -35,7 +35,7 @@ const UserDashboard = () => {
       try {
         const token = localStorage.getItem('token');
         if (token && user) {
-          const res = await axios.get('/api/version1/users/profile', {
+          const res = await axios.get(`${import.meta.env.VITE_API_URL}/users/profile`, {
             headers: { Authorization: `Bearer ${token}` },
           });
           setUserProfile(res.data);

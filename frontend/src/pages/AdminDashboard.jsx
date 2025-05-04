@@ -16,12 +16,12 @@ const AdminDashboard = () => {
       try {
         const token = localStorage.getItem('token');
         if (token && user?.role === 'admin') {
-          const usersRes = await axios.get('/api/admin/users', {
+          const usersRes = await axios.get('/api/version1/admin/users', {
             headers: { Authorization: `Bearer ${token}` },
           });
           setUsers(usersRes.data);
 
-          const uploadsRes = await axios.get('/api/admin/uploads', {
+          const uploadsRes = await axios.get('/api/version1/admin/uploads', {
             headers: { Authorization: `Bearer ${token}` },
           });
           setUploads(uploadsRes.data);

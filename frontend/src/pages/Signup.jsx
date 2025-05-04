@@ -20,9 +20,9 @@ const SignUp = () => {
     try {
       await signup(username, email, password, role);
       if (role === 'admin') {
-        navigate('/AdminDashboard');
+        navigate('/admin/dashboard');
       } else {
-        navigate('/UserDashboard');
+        navigate('/user/dashboard');
       }
     } catch (err) {
       setError(err);

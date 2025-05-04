@@ -1,4 +1,5 @@
 import React, { createContext, useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 const AuthContext = createContext();
@@ -6,36 +7,45 @@ const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      fetchUserProfile(token);
-    } else {
-      setLoading(false);
-    }
-  }, []);
+  const navigate = useNavigate();
 
   const fetchUserProfile = async (token) => {
+    console.log('Token in fetchUserProfile:', token);
     try {
-      const res = await axios.get('/api/version1/auth/profile', {
+      const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/version1/users/profile`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setUser(res.data);
     } catch (error) {
-      console.error('Error fetching user profile:', error);
-      localStorage.removeItem('token');
+      console.error('Error fetching profile:', error);
       setUser(null);
-    } finally {
-      setLoading(false);
+      localStorage.removeItem('token');
     }
   };
 
+  useEffect(() => {
+    const checkAuth = async () => {
+      const token = localStorage.getItem('token');
+      if (token) {
+        setLoading(true);
+        await fetchUserProfile(token);
+        setLoading(false);
+      } else {
+        setLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, []);
+
   const login = async (email, password) => {
     try {
-      const res = await axios.post('/api/version1/auth/login', { email, password });
+      const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/version1/auth/login`, { email, password });
       localStorage.setItem('token', res.data.token);
-      setUser(res.data);
+      console.log('Login successful, token:', res.data.token);
+      console.log('Calling fetchUserProfile...');
+      await fetchUserProfile(res.data.token); // Fetch profile immediately after login
+      console.log('fetchUserProfile completed.');
       return true;
     } catch (error) {
       console.error('Login failed:', error);
@@ -45,9 +55,9 @@ export const AuthProvider = ({ children }) => {
 
   const signup = async (username, email, password, role) => {
     try {
-      const res = await axios.post('/api/version1/auth/signup', { username, email, password, role });
+      const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/version1/auth/register`, { username, email, password, role });
       localStorage.setItem('token', res.data.token);
-      setUser(res.data);
+      await fetchUserProfile(res.data.token); // Fetch profile after signup as well, if needed
       return true;
     } catch (error) {
       console.error('Signup failed:', error);
@@ -58,10 +68,11 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     localStorage.removeItem('token');
     setUser(null);
+    navigate('/login');
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, signup, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, signup }}>
       {children}
     </AuthContext.Provider>
   );
