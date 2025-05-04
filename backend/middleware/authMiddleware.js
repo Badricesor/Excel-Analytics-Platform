@@ -5,7 +5,7 @@ const protect = async (req, res, next) => {
   let token;
   console.log('*** Auth Middleware Start ***');
   console.log('Headers:', req.headers);
-  console.log('JWT Secret from env:', process.env.JWT_SECRET);
+
 
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
     try {
@@ -18,10 +18,12 @@ const protect = async (req, res, next) => {
       // Get user from the token
       req.user = await User.findById(decoded.id).select('-password');
       console.log('User found from token:', req.user);
+      console.log('JWT Secret from env:', process.env.JWT_SECRET);
 
       next();
     } catch (error) {
       console.error('Token verification failed:', error);
+      console.error('Full Error Object:', error);
       res.status(401).json({ message: 'Not authorized, token failed' });
     }
   }
