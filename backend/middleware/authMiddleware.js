@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/userModel.js';
+import mongoose from "mongoose"
 
 const protect = async (req, res, next) => {
   console.log('*** Auth Middleware Start ***');
