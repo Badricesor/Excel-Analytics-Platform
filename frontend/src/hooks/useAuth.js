@@ -7,27 +7,31 @@ const useAuth = () => {
   const [loading, setLoading] = useState(true);
   const { logout: contextLogout } = useContext(AuthContext);
 
+  const fetchUserProfile = async (token) => {
+    setLoading(true); // Set loading to true at the start of the fetch
+    try {
+      const res = await axios.get('/api/version1/users/profile', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setUser(res.data);
+      setLoading(false); // Set loading to false on successful fetch
+      console.log('useAuth - Profile fetched successfully, loading set to false');
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+      setUser(null);
+      localStorage.removeItem('token');
+      setLoading(false); // Ensure loading is also set to false on error
+      console.log('useAuth - Error fetching profile, loading set to false');
+    }
+  };
+
   useEffect(() => {
     const token = localStorage.getItem('token');
-    const fetchUserProfile = async (token) => {
-      try {
-        const res = await axios.get('/api/version1/users/profile', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setUser(res.data);
-      } catch (error) {
-        console.error('Error fetching user profile:', error);
-        localStorage.removeItem('token');
-        setUser(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     if (token) {
       fetchUserProfile(token);
     } else {
-      setLoading(false);
+      setLoading(false); // If no token, loading is also false
+      console.log('useAuth - No token, loading set to false');
     }
   }, []);
 
@@ -55,6 +59,10 @@ const useAuth = () => {
     }
   };
 
+  // const logout = () => {
+  //   contextLogout();
+  //   setUser(null);
+  // };
   const logout = () => {
     localStorage.removeItem('token');
     setUser(null);
@@ -64,7 +72,7 @@ const useAuth = () => {
     }
   };
 
-  return { user, loading, login, signup, logout };
+  return { auth: { user }, loading, login, signup, logout };
 };
 
 export default useAuth;

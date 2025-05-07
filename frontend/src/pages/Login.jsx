@@ -33,17 +33,21 @@ const Login = () => {
   };
 
   return (
-    <div className="bg-gray-100 min-h-screen flex items-center justify-center p-6">
-      <div className="px-8 py-6 mt-4 text-left bg-white shadow-lg rounded-lg w-full max-w-md">
-        <h3 className="text-2xl font-bold text-center text-blue-500 mb-4">Log In</h3>
+    <div className="flex justify-center items-center min-h-screen bg-gray-900 dark:bg-black-800 ">
+      <div className="rounded-3xl px-8 py-6 mt-6 p-8 bg-gray-800 text-left border-1 border-gray-300 border-solid shadow-lg w-full max-w-md">
+        
+      <img src="logo.png" alt="Logo" className="w-24 mx-auto mb-2" />
+      <h2 className=" text-2xl text-white font-bold font-serif text-center mb-4">Excel Analytics Platform</h2>
+
+        <h3 className="text-2xl text-red-500 font-bold font-serif text-center mb-6">Login</h3>
         {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="email">
+            {/* <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="email">
               Email
-            </label>
+            </label> */}
             <input
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              className="shadow border-gray-400 appearance-none border rounded w-full py-2 px-3 text-gray-200 leading-tight focus:outline-none focus:shadow-outline"
               id="email"
               type="email"
               placeholder="Email"
@@ -53,11 +57,11 @@ const Login = () => {
             />
           </div>
           <div>
-            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="password">
+            {/* <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="password">
               Password
-            </label>
+            </label> */}
             <input
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              className="shadow border-gray-400  appearance-none border rounded w-full py-2 px-3 text-gray-200 leading-tight focus:outline-none focus:shadow-outline"
               id="password"
               type="password"
               placeholder="Password"
@@ -69,12 +73,12 @@ const Login = () => {
           <div className="mt-6">
             <button
               type="submit"
-              className="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+              className="bg-red-500 hover:bg-blue-700 w-full text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
             >
               Log In
             </button>
             <div className="mt-4 text-center">
-              <Link to="/signup" className="inline-block align-baseline font-semibold text-sm text-blue-500 hover:text-blue-800">
+              <Link to="/signup" className="inline-block align-baseline font-semibold text-sm text-gray-400  hover:text-red-500">
                 Don't have an account? Sign Up
               </Link>
             </div>

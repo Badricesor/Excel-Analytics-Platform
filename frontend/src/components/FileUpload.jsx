@@ -24,7 +24,7 @@ const FileUpload = ({ onUploadSuccess }) => {
 
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.post('/api/upload', formData, {
+      const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/version1/upload`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
           Authorization: `Bearer ${token}`,

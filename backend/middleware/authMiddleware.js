@@ -24,6 +24,7 @@ const protect = async (req, res, next) => {
       }
 
       // Attempt to find the user by the ID from the token
+      console.log('Searching for user with ID:', decoded.id);
       req.user = await User.findById(decoded.id).select('-password');
       console.log('User found from token:', req.user);
 

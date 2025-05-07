@@ -47,22 +47,26 @@ const SignUp = () => {
     
     <div className="flex justify-center items-center min-h-screen bg-gray-900 dark:bg-black-800 ">
 
-      <header className="absolute top-0 left-0 p-6 flex items-center">
+      {/* <header className="absolute top-0 left-0 p-6 flex items-center">
         {logo && <img src={logo} alt="Logo" className="h-8 w-auto mr-3" />}
         <h1 className="text-m font-semibold text-red-400">Excel Analytics Platform</h1>
-      </header>
+      </header> */}
 
       {/* input box */}
-      <div className=" rounded-3xl px-8 py-6 mt-6 p-8 text-left bg-white bg-opacity-10 shadow-lg w-full max-w-md">
-        <h3 className="text-2xl font-bold text-center mb-4">Sign Up</h3>
+      <div className=" rounded-3xl px-8 py-6 mt-6 p-8 bg-gray-800 text-left border-1 border-gray-300 border-solid shadow-lg w-full max-w-md">
+        
+      <img src="logo.png" alt="Logo" className="w-24 mx-auto mb-2" />
+      <h2 className=" text-2xl text-white font-bold font-serif text-center mb-4">Excel Analytics Platform</h2>
+
+        <h3 className="text-xl text-red-500 font-semibold font-serif text-center mb-4">Sign Up</h3>
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="username">
+            {/* <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="username">
               Username
-            </label>
+            </label> */}
             <input
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              className="shadow border-gray-400 appearance-none border rounded w-full py-2 px-3 text-gray-200  leading-tight focus:outline-none focus:shadow-outline"
               id="username"
               type="text"
               placeholder="Username"
@@ -72,11 +76,11 @@ const SignUp = () => {
             />
           </div>
           <div>
-            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="email">
+            {/* <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="email">
               Email
-            </label>
+            </label> */}
             <input
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              className="shadow border-gray-400 appearance-none border rounded w-full py-2 px-3 text-gray-200 leading-tight focus:outline-none focus:shadow-outline"
               id="email"
               type="email"
               placeholder="Email"
@@ -86,11 +90,11 @@ const SignUp = () => {
             />
           </div>
           <div>
-            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="password">
+            {/* <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="password">
               Password
-            </label>
+            </label> */}
             <input
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              className="shadow border-gray-400 appearance-none border rounded w-full py-2 px-3 text-gray-200 leading-tight focus:outline-none focus:shadow-outline"
               id="password"
               type="password"
               placeholder="Password"
@@ -100,12 +104,12 @@ const SignUp = () => {
             />
           </div>
           <div>
-            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="role">
+            {/* <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="role">
               Role
-            </label>
+            </label> */}
             <select
               id="role"
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              className="shadow border-gray-400 appearance-none border bg-gray-700 rounded w-full py-2 px-3 text-gray-200 leading-tight focus:outline-none focus:shadow-outline"
               value={role}
               onChange={(e) => setRole(e.target.value)}
             >
@@ -118,14 +122,14 @@ const SignUp = () => {
               type="submit"
               className={cn(
                 "w-full", // Make button take full width
-                "bg-red-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                "bg-red-500 hover:bg-red-700 text-white mb-2 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
               )}
             >
               Sign Up
             </Button>
             <Link
               to="/login"
-              className="block text-center mt-4 align-baseline font-semibold text-sm text-blue-500 hover:text-red-500"
+              className="block text-center mt-2 align-baseline font-semibold text-sm text-gray-400 hover:text-red-500"
             >
               Already have an account? Login
             </Link>
@@ -142,14 +146,14 @@ const SignUp = () => {
             <Button
               variant="outline"
               onClick={handleGoogleLogin}
-              className="px-4 text-red-700 py-2 hover:text-blue-700 rounded-full"
+              className="px-4 text-gray-300 py-2 hover:text-blue-700 rounded-full"
             >
               Google
             </Button>
             <Button
               variant="outline"
               onClick={handleFacebookLogin}
-              className="px-4 py-2 text-red-700 hover:text-blue-700 rounded-full"
+              className="px-4 py-2 text-gray-300 hover:text-blue-700 rounded-full"
             >
               Facebook
             </Button>

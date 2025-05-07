@@ -1,6 +1,7 @@
-import React, { createContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+// import UserDashboard from '../pages/UserDashboard.jsx';
 
 const AuthContext = createContext();
 
@@ -16,25 +17,26 @@ export const AuthProvider = ({ children }) => {
         headers: { Authorization: `Bearer ${token}` },
       });
       setUser(res.data);
+      setLoading(false);
+      console.log('User profile fetched successfully:', res.data);
     } catch (error) {
       console.error('Error fetching profile:', error);
       setUser(null);
+      setLoading(false);
       localStorage.removeItem('token');
     }
   };
-
   useEffect(() => {
     const checkAuth = async () => {
       const token = localStorage.getItem('token');
+      console.log('AuthContext useEffect - Token from localStorage:', token)
       if (token) {
-        setLoading(true);
+        setLoading(true); // Set loading true before fetching
         await fetchUserProfile(token);
-        setLoading(false);
-      } else {
-        setLoading(false);
       }
+      setLoading(false); // Set loading false after the initial check
     };
-
+  
     checkAuth();
   }, []);
 
@@ -46,9 +48,11 @@ export const AuthProvider = ({ children }) => {
       console.log('Calling fetchUserProfile...');
       await fetchUserProfile(res.data.token); // Fetch profile immediately after login
       console.log('fetchUserProfile completed.');
+      setLoading(false);
       return true;
     } catch (error) {
       console.error('Login failed:', error);
+      setLoading(false);
       throw error.response?.data?.message || 'Login failed';
     }
   };
@@ -71,9 +75,19 @@ export const AuthProvider = ({ children }) => {
     navigate('/login');
   };
 
+  const value = useMemo(() => ({
+    user,
+    loading,
+    login,
+    logout,
+    signup,
+  }), [user, loading]); // Only re-create value when user or loading changes
+
+
   return (
     <AuthContext.Provider value={{ user, loading, login, logout, signup }}>
       {children}
+      {/* <UserDashboard /> */}
     </AuthContext.Provider>
   );
 };
