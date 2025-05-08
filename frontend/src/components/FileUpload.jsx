@@ -24,7 +24,11 @@ const FileUpload = ({ onUploadSuccess }) => {
 
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/version1/upload`, formData, {
+      // const apiUrl = import.meta.env.VITE_API_URL;
+      const uploadUrl = 'https://excel-analytics-platform.onrender.com/api/version1/upload'; // Assuming your upload route is directly under /api/v1
+
+      console.log('Sending Token on Upload:', token); 
+      const res = await axios.post(uploadUrl, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
           Authorization: `Bearer ${token}`,
@@ -42,10 +46,10 @@ const FileUpload = ({ onUploadSuccess }) => {
 
   return (
     <div>
-      <input type="file" accept=".xlsx, .xls" onChange={handleFileChange} className="mb-2" />
+      <input type="file" accept=".xlsx, .xls" onChange={handleFileChange} className="mb-2" /><br></br>
       <button
         onClick={handleSubmit}
-        className={`bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline ${uploading ? 'opacity-50 cursor-not-allowed' : ''}`}
+        className={`bg-red-500 hover:bg-red-400 text-white  font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline ${uploading ? 'opacity-50 cursor-not-allowed' : ''}`}
         disabled={uploading}
       >
         {uploading ? 'Uploading...' : 'Upload'}
