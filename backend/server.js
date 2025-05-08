@@ -27,7 +27,7 @@ app.use(cors(corsOptions));
 
 //Routes
 app.use('/api/version1/auth',authroutes)
-app.use('/api/version1/upload', uploadRoutes);
+app.use('/api/version1', uploadRoutes);
 app.use('/api/version1/users', userRoutes);
 app.use('/api/version1/admin', adminRoutes);
 

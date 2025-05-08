@@ -10,7 +10,7 @@ const FileUpload = ({ onUploadSuccess }) => {
     setFile(e.target.files[0]);
   };
 
-  const handleSubmit = async () => {
+  const handleFileUpload = async () => {
     if (!file) {
       setError('Please select a file.');
       return;
@@ -22,39 +22,36 @@ const FileUpload = ({ onUploadSuccess }) => {
     const formData = new FormData();
     formData.append('excelFile', file);
 
-    try {
-      const token = localStorage.getItem('token');
-      // const apiUrl = import.meta.env.VITE_API_URL;
-      const uploadUrl = 'https://excel-analytics-platform.onrender.com/api/version1/upload'; // Assuming your upload route is directly under /api/v1
+    const token = localStorage.getItem('token');
 
-      console.log('Sending Token on Upload:', token); 
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL;
+      const uploadUrl = `${apiUrl}/api/version1/upload`; // Construct the full API endpoint
+
       const res = await axios.post(uploadUrl, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
           Authorization: `Bearer ${token}`,
         },
       });
-      onUploadSuccess(res.data.data, res.data.fileId);
+
       setUploading(false);
+      onUploadSuccess(res.data); // Pass the response data to your chart component
       setFile(null); // Clear the selected file
     } catch (err) {
+      setUploading(false);
       console.error('File upload error:', err);
       setError(err.response?.data?.message || 'File upload failed');
-      setUploading(false);
     }
   };
 
   return (
     <div>
-      <input type="file" accept=".xlsx, .xls" onChange={handleFileChange} className="mb-2" /><br></br>
-      <button
-        onClick={handleSubmit}
-        className={`bg-red-500 hover:bg-red-400 text-white  font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline ${uploading ? 'opacity-50 cursor-not-allowed' : ''}`}
-        disabled={uploading}
-      >
+      <input type="file" accept=".xlsx, .xls" onChange={handleFileChange} />
+      <button onClick={handleFileUpload} disabled={uploading || !file}>
         {uploading ? 'Uploading...' : 'Upload'}
       </button>
-      {error && <p className="text-red-500 mt-2">{error}</p>}
+      {error && <p className="error">{error}</p>}
     </div>
   );
 };
