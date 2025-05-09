@@ -71,7 +71,7 @@ export const uploadController = async (req, res) => {
       const uploadData = {
         userId: req.user._id,
         filename: req.file.originalname,
-        filepath: req.file.path,
+        filePath: req.file.path,
         filesize: req.file.size,
       };
 
