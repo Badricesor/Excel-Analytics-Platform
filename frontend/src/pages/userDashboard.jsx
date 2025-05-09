@@ -302,7 +302,7 @@ const handleFileUploadSuccess = (data, fileId) => {
  {error && <p className="mt-2 text-sm text-red-500">{error}</p>}
  </div>
  </div>
- <div className="mt-6 border rounded-md p-4 bg-gray-600 flex items-center justify-between">
+ <div className="mt-6 border rounded-md p-4 bg-gray-600 flex items-center justify-center">
  <div className="flex items-center">
  <img src={defaultChartImage} alt="Sample Bar Chart" className="h-20 w-auto" />
  </div>

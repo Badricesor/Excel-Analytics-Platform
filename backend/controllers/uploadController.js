@@ -49,9 +49,11 @@ export const uploadController = async (req, res) => {
 
     console.log('File uploaded successfully (middleware):', req.file);
 
+    const { originalname, path: uploadedFilePath, size } = req.file;
+
     try {
       console.log('*** Starting file processing ***');
-      const workbook = XLSX.readFile(req.file.path);
+      const workbook = XLSX.readFile(uploadedFilePath); 
       const sheetName = workbook.SheetNames[0];
       const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
 
@@ -67,9 +69,9 @@ export const uploadController = async (req, res) => {
       console.log('req.file in uploadController:', req.file);
       const upload = await Upload.create({
         userId: req.user._id,
-        filename: req.file.originalname,
-        filepath: req.file.path,
-        filesize: req.file.size,
+        filename: originalname, // Use captured values
+        filepath: uploadedFilePath, // Use captured values
+        filesize: size, // Use captured value
       });
 
       console.log('**** File processing completed successfully ****');
