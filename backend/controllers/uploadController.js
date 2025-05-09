@@ -1,4 +1,4 @@
-import fs from 'node:fs/promises';
+// import fs from 'node:fs/promises';
 import multer from 'multer';
 import path from 'path';
 import XLSX from 'xlsx';
@@ -67,12 +67,16 @@ export const uploadController = async (req, res) => {
       }
 
       console.log('req.file in uploadController:', req.file);
-      const upload = await Upload.create({
+
+      const uploadData = {
         userId: req.user._id,
-        filename: originalname, // Use captured values
-        filepath: uploadedFilePath, // Use captured values
-        filesize: size, // Use captured value
-      });
+        filename: req.file.originalname,
+        filepath: req.file.path,
+        filesize: req.file.size,
+      };
+
+      const upload = new Upload(uploadData); // Create a new Upload instance
+      await upload.save(); // Then save it
 
       console.log('**** File processing completed successfully ****');
       res.status(200).json({ message: 'File uploaded and processed successfully', data: jsonData, uploadId: upload._id });
