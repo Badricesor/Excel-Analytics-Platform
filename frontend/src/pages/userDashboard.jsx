@@ -228,11 +228,11 @@ const handleFileUploadSuccess = (data, fileId) => {
  <h2 className="text-xl font-semibold text-gray-300 mb-2">
  Upload an Excel file
  </h2>
- <p className="text-sm text-gray-400 mb-4">
+ <p className="text-sm text-gray-300 mb-4">
  Select an Excel file to analyze and visualize its data.
  </p>
  <div className="border-2 border-dashed border-gray-400 rounded-md p-6 flex flex-col items-center justify-center">
- <ArrowUpTrayIcon className="h-10 w-10 text-gray-500" />
+ <ArrowUpTrayIcon className="h-10 w-10 text-gray-300" />
  <p className="mt-2 text-sm text-gray-400">
  Drop file here or <button className="text-red-500 hover:text-red-400 focus:outline-none focus-underline">click to browse</button>
  </p>

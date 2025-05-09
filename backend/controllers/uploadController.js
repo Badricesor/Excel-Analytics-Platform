@@ -64,6 +64,7 @@ export const uploadController = async (req, res) => {
         return res.status(400).json({ message: 'Selected sheet does not have the data in the required format (missing "item" or "xaxis" columns).' });
       }
 
+      console.log('req.file in uploadController:', req.file);
       const upload = await Upload.create({
         userId: req.user._id,
         filename: req.file.originalname,

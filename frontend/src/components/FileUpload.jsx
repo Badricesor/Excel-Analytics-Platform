@@ -48,7 +48,9 @@ const FileUpload = ({ onUploadSuccess }) => {
   return (
     <div>
       <input type="file" accept=".xlsx, .xls" onChange={handleFileChange} />
-      <button onClick={handleFileUpload} disabled={uploading || !file}>
+      <button onClick={handleFileUpload} 
+      className={`bg-red-500 hover:bg-red-400 text-white  font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline ${uploading ? 'opacity-50 cursor-not-allowed' : ''}`}
+      disabled={uploading || !file}>
         {uploading ? 'Uploading...' : 'Upload'}
       </button>
       {error && <p className="error">{error}</p>}
