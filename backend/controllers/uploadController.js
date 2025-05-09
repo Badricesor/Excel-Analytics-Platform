@@ -79,7 +79,12 @@ export const uploadController = async (req, res) => {
       await upload.save(); // Then save it
 
       console.log('**** File processing completed successfully ****');
-      res.status(200).json({ message: 'File uploaded and processed successfully', data: jsonData, uploadId: upload._id });
+
+      res.status(200).json({ message: 'File uploaded and processed successfully',
+      data: jsonData,
+      uploadId: upload._id ,
+      headers: Object.keys(jsonData[0] || {}),
+      });
 
     } catch (error) {
       console.error('Error processing excel file:', error);

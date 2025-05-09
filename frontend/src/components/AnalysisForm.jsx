@@ -19,7 +19,7 @@ const AnalysisForm = ({
           id="xAxis"
           className="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus-ring-indigo-500 focus-border-indigo-500 sm:text-sm"
           value={selectedXAxis}
-          onChange={onXAxisChange}
+          onChange={(e) => onAxisChange(e)}
         >
           <option value="">Select column...</option>
           {headers.map((header) => (
@@ -33,7 +33,7 @@ const AnalysisForm = ({
           id="yAxis"
           className="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus-ring-indigo-500 focus-border-indigo-500 sm:text-sm"
           value={selectedYAxis}
-          onChange={onYAxisChange}
+          onChange={(e) => onAxisChange(e)}
         >
           <option value="">Select column...</option>
           {headers.map((header) => (
