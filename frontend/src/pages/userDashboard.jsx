@@ -15,11 +15,12 @@ const UserDashboard = () => {
   const [uploadedData, setUploadedData] = useState(null);
   const [selectedFileId, setSelectedFileId] = useState(null);
   const [analysisResult, setAnalysisResult] = useState(null);
+  const [allAnalysisResults, setAllAnalysisResults] = useState([]);
   const [error, setError] = useState('');
   const [loadingAnalysis, setLoadingAnalysis] = useState(false);
   const [xAxisColumn, setXAxisColumn] = useState('');
   const [yAxisColumn, setYAxisColumn] = useState('');
-  const [chartType, setChartType] = useState('Bar');
+  const [chartType, setChartType] = useState('scatter');
   const [activeSection, setActiveSection] = useState('Dashboard');
   const { logout } = useContext(AuthContext);
   const navigate = useNavigate();
@@ -36,10 +37,11 @@ const UserDashboard = () => {
   const chartTypeOptions = [
     { label: 'Bar', value: 'bar' },
     { label: 'Line', value: 'line' },
-    { label: 'Pie', value: 'pie' },
     { label: 'Area', value: 'area' },
+    { label: 'Pie', value: 'pie' },
     { label: 'Radar', value: 'radar' },
     { label: 'Bubble', value: 'bubble' },
+    { label: 'Doughnut', value: 'doughnut' },
     { label: 'Scatter', value: 'scatter' },
   ];
 
@@ -73,16 +75,19 @@ const UserDashboard = () => {
     setUploadedData(data);
     setSelectedFileId(data?.uploadId);
     setAnalysisResult(null);
+    setAllAnalysisResults([]);
     setError('');
     setXAxisColumn('');
     setYAxisColumn('');
-    setChartType('Bar');
+    setChartType('scatter');
     console.log('Data received after upload:', data);
   };
 
-  const handleGenerateAnalysis = async () => {
+  const handleGenerateAnalysis = async (event) => {
+    event.preventDefault();
+
     if (!selectedFileId) {
-      setError("Please upload an excel file to generate insights.");
+      setError("Please upload an excel file first.");
       return;
     }
     if (!xAxisColumn || !yAxisColumn) {
@@ -106,17 +111,58 @@ const UserDashboard = () => {
       setAnalysisResult(res.data);
     } catch (err) {
       console.error('Error during analysis:', err);
-      setError(err.response?.data?.message || 'Error generating insights.');
+      setError(err.response?.data?.message || err.message || 'Error generating insights.');
     } finally {
       setLoadingAnalysis(false);
     }
   };
 
-  const handleDownloadChart = () => {
-    if (analysisResult?.chartUrl) {
+  const handleGenerateAllCharts = async (event) => {
+    event.preventDefault();
+
+    if (!selectedFileId) {
+      setError("Please upload an excel file first.");
+      return;
+    }
+    if (!xAxisColumn || !yAxisColumn) {
+      setError("Please select both X and Y axes.");
+      return;
+    }
+
+    setLoadingAnalysis(true);
+    setError('');
+    setAllAnalysisResults([]);
+    const token = localStorage.getItem('token');
+    const results = [];
+
+    for (const chartOption of chartTypeOptions) {
+      try {
+        const res = await axios.post(
+          `${import.meta.env.VITE_API_URL}/api/version1/analyze/${selectedFileId}`,
+          { xAxis: xAxisColumn, yAxis: yAxisColumn, chartType: chartOption.value },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        results.push({ chartType: chartOption.value, data: res.data });
+      } catch (err) {
+        console.error(`Error generating ${chartOption.label} chart:`, err);
+        setError(`Error generating ${chartOption.label} chart: ${err.response?.data?.message || err.message}`);
+        // You might want to decide if you want to stop on the first error or continue
+      }
+    }
+
+    setAllAnalysisResults(results);
+    setLoadingAnalysis(false);
+  };
+
+  const handleDownloadChart = (chartUrl, chartType) => {
+    if (chartUrl) {
       const link = document.createElement('a');
-      link.href = analysisResult.chartUrl;
-      link.download = `chart.${analysisResult.chartType || 'png'}`; // Adjust extension as needed
+      link.href = chartUrl;
+      link.download = `chart.${chartType || 'png'}`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -142,31 +188,29 @@ const UserDashboard = () => {
   return (
     <div className="bg-gray-900 dark:bg-gray-900 min-h-screen flex">
       {/* Left Sidebar */}
-      <div className="bg-gray-800 dark:bg-gray-800 w-64 flex-shrink-0">
-        <div className="p-4">
-          <h1 className="text-xl font-bold text-gray-300 mb-4">Excel Analytics</h1>
-          <nav className="space-y-2">
-            <button onClick={() => handleSetActiveSection('Dashboard')} className={`flex items-center space-x-2 py-2 px-4 rounded-md text-gray-400 hover:text-gray-100 hover:bg-gray-700 ${activeSection === 'Dashboard' ? 'bg-gray-700 text-gray-100' : ''}`}>
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 01-1-1h-2a1 1 0 00-1 1v4a1 1 0 011 1h2a1 1 0 001-1v-4c0-1.1-.9-2-2-2h-2a1 1 0 011 1v2a1 1 0 001-1z" /></svg>
-              <span>Dashboard</span>
-            </button>
-            <button onClick={() => handleSetActiveSection('History')} className={`flex items-center space-x-2 py-2 px-4 rounded-md text-gray-400 hover:text-gray-100 hover:bg-gray-700 ${activeSection === 'History' ? 'bg-gray-700 text-gray-100' : ''}`}>
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
-              <span>History</span>
-            </button>
-            <button onClick={() => handleSetActiveSection('Integration')} className={`flex items-center space-x-2 py-2 px-4 rounded-md text-gray-400 hover:text-gray-100 hover:bg-gray-700 ${activeSection === 'Integration' ? 'bg-gray-700 text-gray-100' : ''}`}>
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 20l4-16m4 4l-4 16M21 21l-4-4m4 4l-4 4" /></svg>
-              <span>Integration</span>
-            </button>
-            <button onClick={() => handleSetActiveSection('Profile')} className={`flex items-center space-x-2 py-2 px-4 rounded-md text-gray-400 hover:text-gray-100 hover:bg-gray-700 ${activeSection === 'Profile' ? 'bg-gray-700 text-gray-100' : ''}`}>
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-              <span>Profile</span>
-            </button>
-          </nav>
-          <button onClick={logout} className="mt-4 block w-full py-2 px-4 rounded-md text-red-400 hover:text-red-100 hover:bg-gray-700">
-            Logout
+      <div className="bg-gray-800 dark:bg-gray-800 w-64 flex-shrink-0 p-4">
+        <h1 className="text-xl font-bold text-gray-300 mb-4">Excel Analytics</h1>
+        <nav className="space-y-2">
+          <button onClick={() => handleSetActiveSection('Dashboard')} className={`flex items-center space-x-2 py-2 px-4 rounded-md text-gray-400 hover:text-gray-100 hover:bg-gray-700 ${activeSection === 'Dashboard' ? 'bg-gray-700 text-gray-100' : ''}`}>
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 01-1-1h-2a1 1 0 00-1 1v4a1 1 0 011 1h2a1 1 0 001-1v-4c0-1.1-.9-2-2-2h-2a1 1 0 011 1v2a1 1 0 001-1z" /></svg>
+            <span>Dashboard</span>
           </button>
-        </div>
+          <button onClick={() => handleSetActiveSection('History')} className={`flex items-center space-x-2 py-2 px-4 rounded-md text-gray-400 hover:text-gray-100 hover:bg-gray-700 ${activeSection === 'History' ? 'bg-gray-700 text-gray-100' : ''}`}>
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
+            <span>History</span>
+          </button>
+          <button onClick={() => handleSetActiveSection('Integration')} className={`flex items-center space-x-2 py-2 px-4 rounded-md text-gray-400 hover:text-gray-100 hover:bg-gray-700 ${activeSection === 'Integration' ? 'bg-gray-700 text-gray-100' : ''}`}>
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 20l4-16m4 4l-4 16M21 21l-4-4m4 4l-4 4" /></svg>
+            <span>Integration</span>
+          </button>
+          <button onClick={() => handleSetActiveSection('Profile')} className={`flex items-center space-x-2 py-2 px-4 rounded-md text-gray-400 hover:text-gray-100 hover:bg-gray-700 ${activeSection === 'Profile' ? 'bg-gray-700 text-gray-100' : ''}`}>
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+            <span>Profile</span>
+          </button>
+        </nav>
+        <button onClick={logout} className="mt-4 block w-full py-2 px-4 rounded-md text-red-400 hover:text-red-100 hover:bg-gray-700">
+          Logout
+        </button>
       </div>
 
       {/* Main Content */}
@@ -183,26 +227,63 @@ const UserDashboard = () => {
                 <h2 className="text-xl text-gray-400 mb-4">Analysis</h2>
                 <AnalysisForm
                   headers={uploadedData?.headers || Object.keys(uploadedData?.data?.[0] || {})}
-                  onAnalyze={handleGenerateAnalysis}
-                  loading={loadingAnalysis}
-                  xAxisChange={setXAxisColumn} // Correctly pass the state setter
-                  yAxisChange={setYAxisColumn} // Correctly pass the state setter
+                  xAxisChange={setXAxisColumn}
+                  yAxisChange={setYAxisColumn}
                   chartTypeChange={setChartType}
                   selectedXAxis={xAxisColumn}
                   selectedYAxis={yAxisColumn}
                   selectedChartType={chartType}
+                  chartTypeOptions={chartTypeOptions}
                 />
+                <div className="mt-4 space-x-2">
+                  <button
+                    onClick={handleGenerateAnalysis}
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-gray-500 disabled:cursor-not-allowed"
+                    disabled={loadingAnalysis || !xAxisColumn || !yAxisColumn}
+                  >
+                    {loadingAnalysis ? 'Generating...' : 'Generate Chart'}
+                  </button>
+                  <button
+                    onClick={handleGenerateAllCharts}
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:bg-gray-500 disabled:cursor-not-allowed"
+                    disabled={loadingAnalysis || !xAxisColumn || !yAxisColumn}
+                  >
+                    {loadingAnalysis ? 'Generating All...' : 'Generate All Charts'}
+                  </button>
+                </div>
                 {error && <p className="text-red-500 mt-2">{error}</p>}
+
                 {analysisResult?.chartUrl && (
                   <div className="mt-4">
-                    <h3>Generated Chart</h3>
-                    <img src={analysisResult.chartUrl} alt="Generated Chart" className="max-w-full" />
-                    <button onClick={handleDownloadChart} className="mt-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
-                      <ArrowDownTrayIcon className="h-5 w-5 inline-block mr-2" /> Download Chart
+                    <h3 className="text-lg text-gray-400 mb-2">Generated {chartType} Chart</h3>
+                    <img src={analysisResult.chartUrl} alt={`${chartType} Chart`} className="max-w-full" />
+                    <button onClick={() => handleDownloadChart(analysisResult.chartUrl, chartType)} className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 mt-2">
+                      <ArrowDownTrayIcon className="h-5 w-5 inline-block mr-2" /> Download
                     </button>
-                    {/* <button onClick={() => handleViewChart(selectedFileId)} className="ml-2 text-indigo-500 hover:text-indigo-400">
-                      <EyeIcon className="h-5 w-5 inline-block mr-1" /> View
-                    </button> */}
+                  </div>
+                )}
+
+                {allAnalysisResults.length > 0 && (
+                  <div className="mt-8">
+                    <h3 className="text-lg text-gray-400 mb-2">All Generated Charts</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {allAnalysisResults.map((result) => (
+                        <div key={result.chartType} className="bg-gray-800 rounded-md p-4">
+                          <h4 className="text-md text-gray-300 mb-2">{result.chartType} Chart</h4>
+                          {result.data?.chartUrl ? (
+                            <div>
+                              <img src={result.data.chartUrl} alt={`${result.chartType} Chart`} className="max-w-full" />
+                              <button onClick={() => handleDownloadChart(result.data.chartUrl, result.chartType)} className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 mt-2">
+                                <ArrowDownTrayIcon className="h-5 w-5 inline-block mr-2" /> Download
+                              </button>
+                              {/* Add View option if needed */}
+                            </div>
+                          ) : (
+                            <p className="text-red-500">Error generating this chart.</p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
