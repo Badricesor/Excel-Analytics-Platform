@@ -82,7 +82,9 @@ const upload = multer({
 });
 
 export const uploadFile = async (req, res) => {
+   console.log('Inside uploadFile function');
   upload.single('file')(req, res, async (err) => {
+    console.log('After multer middleware');
     if (err) {
       return res.status(500).json({ message: 'Error uploading file.', error: err });
     }
