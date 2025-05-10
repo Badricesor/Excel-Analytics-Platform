@@ -81,6 +81,7 @@ const UserDashboard = () => {
     setYAxisColumn('');
     setChartType('scatter');
     console.log('Data received after upload:', data);
+    console.log('File Path on Backend:', data?.filePath);
   };
 
   const handleGenerateAnalysis = async (event) => {

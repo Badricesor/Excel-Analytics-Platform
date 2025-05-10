@@ -1,23 +1,19 @@
-// import fs from 'node:fs/promises';
+import fs from 'fs/promises';
 import multer from 'multer';
 import path from 'path';
-import XLSX from 'xlsx';
-import Upload from '../models/Upload.js';
-import User from '../models/userModel.js';
+import os from 'os';
+import xlsx from 'xlsx';
+import Upload from '../models/Upload.js'; // Adjust the path to your Upload model
 
-
-// Configure multer for file uploads
-// Configure multer for file upload
+// Configure multer for file uploads to the OS temporary directory
 const storage = multer.diskStorage({
-  destination(req, file, cb) {
-    cb(null, 'uploads/'); // Ensure this folder exists and has write permissions
-  },
-  filename(req, file, cb) {
-    cb(null, `${file.fieldname}-${Date.now()}${path.extname(file.originalname)}`);
+  destination: os.tmpdir(),
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
   },
 });
 
-// Handle file size and type restrictions if needed
 const fileFilter = (req, file, cb) => {
   if (file.mimetype === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || file.mimetype === 'application/vnd.ms-excel') {
     cb(null, true);
@@ -27,111 +23,78 @@ const fileFilter = (req, file, cb) => {
 };
 
 const upload = multer({
-  storage,
-  fileFilter,
-  limits: { fileSize: 10 * 1024 * 1024 }, // Example: 10MB limit
+  storage: storage,
+  fileFilter: fileFilter,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
 });
 
-export const uploadFile = upload.single('excelFile'); // Export the middleware
-
-export const uploadController = async (req, res) => {
-  console.log('*** uploadController invoked ***');
-
-  uploadFile(req, res, async (err) => { // Call the middleware
+export const uploadFile = (req, res) => {
+  upload.single('excelFile')(req, res, async (err) => {
     if (err) {
       console.error('Multer error during upload:', err);
       return res.status(500).json({ message: 'File upload failed due to server error.', error: err.message });
     }
-
     if (!req.file) {
       return res.status(400).json({ message: 'Please upload an Excel file.' });
     }
 
-    console.log('File uploaded successfully (middleware):', req.file);
+    const { originalname, path: filePath, size } = req.file;
 
-    const { originalname, path: uploadedFilePath, size } = req.file;
+    const uploadData = new Upload({
+      userId: req.user.id, // Assuming you have user authentication middleware
+      filename: originalname,
+      filePath: filePath,
+      fileSize: size,
+    });
 
     try {
-      console.log('*** Starting file processing ***');
-      const workbook = XLSX.readFile(uploadedFilePath); 
+      const savedUpload = await uploadData.save();
+      console.log('File uploaded successfully (ID):', savedUpload._id, 'Path:', filePath);
+      const workbook = xlsx.readFile(filePath);
       const sheetName = workbook.SheetNames[0];
-      const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
-
-      if (!jsonData || jsonData.length === 0) {
-        return res.status(400).json({ message: 'No data found in the Excel file.' });
-      }
-
+      const jsonData = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
       const headers = Object.keys(jsonData[0] || {});
-      if (!headers.includes('item') || !headers.includes('xaxis')) {
-        return res.status(400).json({ message: 'Selected sheet does not have the data in the required format (missing "item" or "xaxis" columns).' });
-      }
 
-      console.log('req.file in uploadController:', req.file);
-
-      const uploadData = {
-        userId: req.user._id,
-        filename: req.file.originalname,
-        filePath: req.file.path,
-        filesize: req.file.size,
-      };
-
-      const upload = new Upload(uploadData); // Create a new Upload instance
-      await upload.save(); // Then save it
-
-      console.log('**** File processing completed successfully ****');
-
-      res.status(200).json({ message: 'File uploaded and processed successfully',
-      data: jsonData,
-      uploadId: upload._id ,
-      headers: Object.keys(jsonData[0] || {}),
-      });
-
+      res.status(200).json({ message: 'File uploaded and processed successfully', data: jsonData, uploadId: savedUpload._id, headers });
     } catch (error) {
-      console.error('Error processing excel file:', error);
-      // Optionally delete the uploaded file if processing fails
-      // fs.unlinkSync(req.file.path);
-      res.status(500).json({ message: 'Error processing excel file', error: error.message });
+      console.error('Error saving upload details:', error);
+      await fs.unlink(filePath); // Clean up the temporary file
+      res.status(500).json({ message: 'Error saving upload details', error: error.message });
     }
   });
 };
 
-
-// @desc    Analyze data and generate chart data
-// @route   POST /api/analyze/:uploadId
-// @access  Private
-const analyzeData = async (req, res) => {
+export const analyzeData = async (req, res) => {
   const { uploadId } = req.params;
   const { xAxis, yAxis, chartType } = req.body;
 
   try {
     const upload = await Upload.findById(uploadId);
     if (!upload) {
-      return res.status(404).json({ message: 'Upload not found' });
+      return res.status(404).json({ message: 'Upload not found.' });
     }
 
-    if (upload.userId.toString() !== req.user._id.toString()) {
-      return res.status(401).json({ message: 'Not authorized to analyze this file' });
-    }
+    const filePath = upload.filePath;
+    console.log('Analyzing file at path:', filePath);
 
-    const workbook = XLSX.readFile(upload.filePath);
+    const workbook = xlsx.readFile(filePath);
     const sheetName = workbook.SheetNames[0];
-    const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
+    const jsonData = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
 
     if (!jsonData || jsonData.length === 0) {
-      return res.status(400).json({ message: 'No data found in the Excel file' });
+      return res.status(400).json({ message: 'No data found in the Excel file.' });
     }
 
     if (!jsonData[0].hasOwnProperty(xAxis) || !jsonData[0].hasOwnProperty(yAxis)) {
-      return res.status(400).json({ message: 'Selected axes not found in the data' });
+      return res.status(400).json({ message: 'Selected axes not found in the data.' });
     }
 
-    let chartData = {
-      labels: jsonData.map((item) => item[xAxis]),
+    const chartData = {
+      labels: jsonData.map(item => item[xAxis]),
       datasets: [
         {
           label: yAxis,
-          data: jsonData.map((item) => item[yAxis]),
-          // Add more styling options based on chartType
+          data: jsonData.map(item => item[yAxis]),
           backgroundColor: 'rgba(54, 162, 235, 0.6)',
           borderColor: 'rgba(54, 162, 235, 1)',
           borderWidth: 1,
@@ -139,25 +102,26 @@ const analyzeData = async (req, res) => {
       ],
     };
 
+    // In a real application, you would generate a chart URL or data here
+    const chartUrl = `https://example.com/charts/${uploadId}-${xAxis}-${yAxis}-${chartType}.png`;
+
     // Optionally save analysis details to user history
-    await User.findByIdAndUpdate(req.user._id, {
+    await User.findByIdAndUpdate(req.user.id, {
       $push: {
-        'uploadHistory.$[elem].analysisDetails': {
-          xAxis,
-          yAxis,
-          chartType,
+        analysisHistory: {
+          uploadId: uploadId,
+          xAxis: xAxis,
+          yAxis: yAxis,
+          chartType: chartType,
           timestamp: new Date(),
         },
       },
-    }, {
-      arrayFilters: [{ 'elem.fileId': uploadId }],
     });
 
-    res.status(200).json({ chartData, chartType });
+    res.status(200).json({ chartData, chartType, chartUrl });
+
   } catch (error) {
     console.error('Error analyzing data:', error);
     res.status(500).json({ message: 'Error analyzing data', error: error.message });
   }
 };
-
-export { analyzeData, upload }; // Export upload middleware
