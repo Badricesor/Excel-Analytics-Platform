@@ -4,6 +4,7 @@ import path from 'path';
 import os from 'os';
 import xlsx from 'xlsx';
 import Upload from '../models/Upload.js'; // Adjust the path to your Upload model
+import { v4 as uuidv4 } from 'uuid';
 
 // Configure multer for file uploads to the OS temporary directory
 const storage = multer.diskStorage({

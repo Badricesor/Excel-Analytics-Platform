@@ -4,7 +4,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import AuthContext from '../context/AuthContext.jsx';
 import FileUpload from '../components/FileUpload.jsx'; // Assuming this component handles file uploads
 // import { ArrowUpTrayIcon, ChartBarIcon, DocumentArrowDownIcon, EyeIcon, UserCircleIcon } from '@heroicons/react/24/outline';
-// import logo from '../../public/logo.png'; // Replace with your actual logo path
+import logo from '../../public/logo.png'; 
 // import defaultChartImage from '../assets/barchart.jpg'; // Replace with your sample bar chart image
 // import { cn } from "@/lib/utils" //Utility
 import { ArrowDownTrayIcon } from '@heroicons/react/24/outline';
@@ -190,7 +190,7 @@ const UserDashboard = () => {
     <div className="bg-gray-900 dark:bg-gray-900 min-h-screen flex">
       {/* Left Sidebar */}
       <div className="bg-gray-800 dark:bg-gray-800 w-64 flex-shrink-0 p-4">
-        <h1 className="text-xl font-bold text-gray-300 mb-4">Excel Analytics</h1>
+        <h1 className="text-sm font-bold text-gray-300 mb-4">Excel Analytics Platform</h1>
         <nav className="space-y-2">
           <button onClick={() => handleSetActiveSection('Dashboard')} className={`flex items-center space-x-2 py-2 px-4 rounded-md text-gray-400 hover:text-gray-100 hover:bg-gray-700 ${activeSection === 'Dashboard' ? 'bg-gray-700 text-gray-100' : ''}`}>
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 01-1-1h-2a1 1 0 00-1 1v4a1 1 0 011 1h2a1 1 0 001-1v-4c0-1.1-.9-2-2-2h-2a1 1 0 011 1v2a1 1 0 001-1z" /></svg>
