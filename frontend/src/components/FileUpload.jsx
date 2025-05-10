@@ -37,6 +37,7 @@ const FileUpload = ({ onUploadSuccess }) => {
 
       setUploading(false);
       onUploadSuccess(res.data); // Pass the response data to your chart component
+      setUploadError('');
       setFile(null); // Clear the selected file
     } catch (err) {
       setUploading(false);
@@ -53,7 +54,7 @@ const FileUpload = ({ onUploadSuccess }) => {
       disabled={uploading || !file}>
         {uploading ? 'Uploading...' : 'Upload'}
       </button>
-      {error && <p className="error">{error}</p>}
+      {uploadError && <p className="text-red-500">{uploadError}</p>}
     </div>
   );
 };
