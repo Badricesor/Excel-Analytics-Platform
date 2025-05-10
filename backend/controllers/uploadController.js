@@ -57,11 +57,13 @@ const height = 300; // Height of the chart image
 const chartJSNodeCanvas = new ChartJSNodeCanvas({ width, height });
 
 // Configure multer for file uploads to the OS temporary directory
+
+
+// Configure multer storage (using the /tmp directory as shown in your screenshot)
 const storage = multer.diskStorage({
-  destination: os.tmpdir(),
+  destination: '/tmp',
   filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+    cb(null, `excelFile-${Date.now()}${path.extname(file.originalname)}`);
   },
 });
 
@@ -79,38 +81,41 @@ const upload = multer({
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
 });
 
-export const uploadFile = (req, res) => {
-  upload.single('excelFile')(req, res, async (err) => {
+export const uploadFile = async (req, res) => {
+  upload.single('file')(req, res, async (err) => {
     if (err) {
-      console.error('Multer error during upload:', err);
-      return res.status(500).json({ message: 'File upload failed due to server error.', error: err.message });
+      return res.status(500).json({ message: 'Error uploading file.', error: err });
     }
     if (!req.file) {
-      return res.status(400).json({ message: 'Please upload an Excel file.' });
+      return res.status(400).json({ message: 'No file uploaded.' });
     }
 
-    const { originalname, path: filePath, size } = req.file;
-
-    const uploadData = new Upload({
-      userId: req.user.id, // Assuming you have user authentication middleware
-      filename: originalname,
-      filePath: filePath,
-      fileSize: size,
-    });
+    const filePath = req.file.path; // Get the temporary file path
+    const originalName = req.file.originalname;
 
     try {
-      const savedUpload = await uploadData.save();
-      console.log('File uploaded successfully (ID):', savedUpload._id, 'Path:', filePath);
-      const workbook = xlsx.readFile(filePath);
+      const workbook = XLSX.readFile(filePath);
       const sheetName = workbook.SheetNames[0];
-      const jsonData = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
-      const headers = Object.keys(jsonData[0] || {});
+      const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
 
-      res.status(200).json({ message: 'File uploaded and processed successfully', data: jsonData, uploadId: savedUpload._id, headers });
+      const uploadRecord = new Upload({
+        filename: originalName,
+        filePath: filePath, // Store the temporary file path in the database
+        uploadDate: new Date(),
+        data: jsonData, // You might also store processed data if needed
+      });
+
+      const savedUpload = await uploadRecord.save();
+
+      res.status(200).json({
+        message: 'File uploaded and processed successfully',
+        data: jsonData,
+        uploadId: savedUpload._id,
+        headers: Object.keys(jsonData[0] || {}),
+      });
     } catch (error) {
-      console.error('Error saving upload details:', error);
-      await fs.unlink(filePath); // Clean up the temporary file
-      res.status(500).json({ message: 'Error saving upload details', error: error.message });
+      console.error('Error processing uploaded file:', error);
+      res.status(500).json({ message: 'Error processing uploaded file.', error });
     }
   });
 };
@@ -119,55 +124,49 @@ export const analyzeData = async (req, res) => {
   const { uploadId } = req.params;
   const { xAxis, yAxis, chartType } = req.body;
 
-    // Optionally save analysis details to user history
-    await User.findByIdAndUpdate(req.user.id, {
-      $push: {
-        analysisHistory: {
-          uploadId: uploadId,
-          xAxis: xAxis,
-          yAxis: yAxis,
-          chartType: chartType,
-          timestamp: new Date(),
-        },
-      },
-    });
-
-    try {
-      const upload = await Upload.findById(uploadId);
-      if (!upload) {
-        return res.status(404).json({ message: 'Upload not found.' });
-      }
-  
-      const filePath = upload.filePath;
-      console.log('Analyzing file at path:', filePath, 'for chart type:', chartType);
-  
-      const workbook = xlsx.readFile(filePath);
-      const sheetName = workbook.SheetNames[0];
-      const jsonData = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
-  
-      let chartData = {};
-      let chartUrl = '';
-  
-      if (chartType === 'bar') {
-        const configuration = {
-          type: 'bar',
-          data: {
-            labels: jsonData.map(item => item[xAxis]),
-            datasets: [{ label: yAxis, data: jsonData.map(item => item[yAxis]), backgroundColor: 'rgba(54, 162, 235, 0.6)' }],
-          },
-        };
-        const imageBuffer = await chartJSNodeCanvas.renderToBuffer(configuration);
-        const imageName = `bar_chart_${uploadId}.png`;
-        const imagePath = path.join(__dirname, '../uploads', imageName); // Create an 'uploads' folder in your backend
-        await fs.writeFile(imagePath, imageBuffer);
-        chartUrl = `/uploads/${imageName}`; // Serve this static URL
-      }
-      // ... add similar logic for other chart types ...
-  
-      res.status(200).json({ chartData, chartType, chartUrl });
-  
-    } catch (error) {
-      console.error('Error analyzing data for', chartType, ':', error);
-      res.status(500).json({ message: `Error analyzing data for ${chartType}`, error: error.message });
+  try {
+    const uploadRecord = await Upload.findById(uploadId);
+    if (!uploadRecord) {
+      return res.status(404).json({ message: 'Upload record not found.' });
     }
-  };
+
+    const filePath = uploadRecord.filePath; // Retrieve the stored file path
+
+    const workbook = XLSX.readFile(filePath);
+    const sheetName = workbook.SheetNames[0];
+    const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
+
+    const labels = jsonData.map(item => item[xAxis]);
+    const dataValues = jsonData.map(item => item[yAxis]);
+
+    const chartData = {};
+    let chartUrl = '';
+
+    if (chartType === 'bar') {
+      const configuration = {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: `${yAxis} vs ${xAxis}`,
+            data: dataValues,
+            backgroundColor: 'rgba(54, 162, 235, 0.8)',
+          }],
+        },
+      };
+      const canvasRenderService = new CanvasRenderService(600, 400);
+      const imageBuffer = await canvasRenderService.renderToBuffer(configuration);
+      const imageName = `bar_chart_${uploadId}.png`;
+      const imagePath = path.join(__dirname, '../../uploads', imageName); // Adjust path as needed
+      await fs.writeFile(imagePath, imageBuffer);
+      chartUrl = `/uploads/${imageName}`; // Serve this static URL
+    }
+    // ... add similar logic for other chart types ...
+
+    res.status(200).json({ chartData, chartType, chartUrl });
+
+  } catch (error) {
+    console.error('Error analyzing data:', error);
+    res.status(500).json({ message: 'Error analyzing data.', error });
+  }
+};
