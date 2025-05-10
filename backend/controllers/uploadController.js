@@ -3,9 +3,14 @@ import multer from 'multer';
 import path from 'path';
 import os from 'os';
 import xlsx from 'xlsx';
-import Upload from '../models/Upload.js'; // Adjust the path to your Upload model
-import { v4 as uuidv4 } from 'uuid';
-import User from '../models/UserModel.js';
+// import mongoose from 'mongoose';
+// import UserSchema from './UserModel.js';
+// import UploadSchema from './UploadModel.js';
+import { User, Upload } from '../models/index.js';
+// import User from '../models/UserModel.js';
+// import Upload from '../models/Upload.js'; // Adjust the path to your Upload model
+// import { v4 as uuidv4 } from 'uuid';
+
 
 // Configure multer for file uploads to the OS temporary directory
 const storage = multer.diskStorage({
@@ -70,6 +75,20 @@ export const analyzeData = async (req, res) => {
   const { uploadId } = req.params;
   const { xAxis, yAxis, chartType } = req.body;
 
+
+    // Optionally save analysis details to user history
+    await User.findByIdAndUpdate(req.user.id, {
+      $push: {
+        analysisHistory: {
+          uploadId: uploadId,
+          xAxis: xAxis,
+          yAxis: yAxis,
+          chartType: chartType,
+          timestamp: new Date(),
+        },
+      },
+    });
+
   try {
     const upload = await Upload.findById(uploadId);
     if (!upload) {
@@ -107,18 +126,7 @@ export const analyzeData = async (req, res) => {
     // In a real application, you would generate a chart URL or data here
     const chartUrl = `https://example.com/charts/${uploadId}-${xAxis}-${yAxis}-${chartType}.png`;
 
-    // Optionally save analysis details to user history
-    await User.findByIdAndUpdate(req.user.id, {
-      $push: {
-        analysisHistory: {
-          uploadId: uploadId,
-          xAxis: xAxis,
-          yAxis: yAxis,
-          chartType: chartType,
-          timestamp: new Date(),
-        },
-      },
-    });
+  
 
     res.status(200).json({ chartData, chartType, chartUrl });
 

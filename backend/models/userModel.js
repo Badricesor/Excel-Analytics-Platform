@@ -49,10 +49,8 @@ userSchema.methods.matchPassword = async function (enteredPassword) {
 let User;
 
 if (mongoose.models.User) {
-  // If the 'User' model has already been compiled, use the existing one
   User = mongoose.model('User');
 } else {
-  // If the 'User' model has not been compiled yet, define and compile it
   User = mongoose.model('User', userSchema);
 }
 
