@@ -1,3 +1,44 @@
+import { ChartJSNodeCanvas } from 'chartjs-node-canvas';
+import {
+  Chart,
+  LineController,
+  BarController,
+  PieController,
+  DoughnutController,
+  RadarController,
+  BubbleController,
+  ScatterController,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  ArcElement,
+  RadialLinearScale,
+  Title,
+  Legend,
+  Tooltip,
+} from 'chart.js';
+
+Chart.register(
+  LineController,
+  BarController,
+  PieController,
+  DoughnutController,
+  RadarController,
+  BubbleController,
+  ScatterController,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  ArcElement,
+  RadialLinearScale,
+  Title,
+  Legend,
+  Tooltip
+);
 import fs from 'fs/promises';
 import multer from 'multer';
 import path from 'path';
@@ -11,6 +52,9 @@ import { User, Upload } from '../models/index.js';
 // import Upload from '../models/Upload.js'; // Adjust the path to your Upload model
 // import { v4 as uuidv4 } from 'uuid';
 
+const width = 400; // Width of the chart image
+const height = 300; // Height of the chart image
+const chartJSNodeCanvas = new ChartJSNodeCanvas({ width, height });
 
 // Configure multer for file uploads to the OS temporary directory
 const storage = multer.diskStorage({
@@ -75,7 +119,6 @@ export const analyzeData = async (req, res) => {
   const { uploadId } = req.params;
   const { xAxis, yAxis, chartType } = req.body;
 
-
     // Optionally save analysis details to user history
     await User.findByIdAndUpdate(req.user.id, {
       $push: {
@@ -89,49 +132,42 @@ export const analyzeData = async (req, res) => {
       },
     });
 
-  try {
-    const upload = await Upload.findById(uploadId);
-    if (!upload) {
-      return res.status(404).json({ message: 'Upload not found.' });
-    }
-
-    const filePath = upload.filePath;
-    console.log('Analyzing file at path:', filePath);
-
-    const workbook = xlsx.readFile(filePath);
-    const sheetName = workbook.SheetNames[0];
-    const jsonData = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
-
-    if (!jsonData || jsonData.length === 0) {
-      return res.status(400).json({ message: 'No data found in the Excel file.' });
-    }
-
-    if (!jsonData[0].hasOwnProperty(xAxis) || !jsonData[0].hasOwnProperty(yAxis)) {
-      return res.status(400).json({ message: 'Selected axes not found in the data.' });
-    }
-
-    const chartData = {
-      labels: jsonData.map(item => item[xAxis]),
-      datasets: [
-        {
-          label: yAxis,
-          data: jsonData.map(item => item[yAxis]),
-          backgroundColor: 'rgba(54, 162, 235, 0.6)',
-          borderColor: 'rgba(54, 162, 235, 1)',
-          borderWidth: 1,
-        },
-      ],
-    };
-
-    // In a real application, you would generate a chart URL or data here
-    const chartUrl = `https://example.com/charts/${uploadId}-${xAxis}-${yAxis}-${chartType}.png`;
-
+    try {
+      const upload = await Upload.findById(uploadId);
+      if (!upload) {
+        return res.status(404).json({ message: 'Upload not found.' });
+      }
   
-
-    res.status(200).json({ chartData, chartType, chartUrl });
-
-  } catch (error) {
-    console.error('Error analyzing data:', error);
-    res.status(500).json({ message: 'Error analyzing data', error: error.message });
-  }
-};
+      const filePath = upload.filePath;
+      console.log('Analyzing file at path:', filePath, 'for chart type:', chartType);
+  
+      const workbook = xlsx.readFile(filePath);
+      const sheetName = workbook.SheetNames[0];
+      const jsonData = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
+  
+      let chartData = {};
+      let chartUrl = '';
+  
+      if (chartType === 'bar') {
+        const configuration = {
+          type: 'bar',
+          data: {
+            labels: jsonData.map(item => item[xAxis]),
+            datasets: [{ label: yAxis, data: jsonData.map(item => item[yAxis]), backgroundColor: 'rgba(54, 162, 235, 0.6)' }],
+          },
+        };
+        const imageBuffer = await chartJSNodeCanvas.renderToBuffer(configuration);
+        const imageName = `bar_chart_${uploadId}.png`;
+        const imagePath = path.join(__dirname, '../uploads', imageName); // Create an 'uploads' folder in your backend
+        await fs.writeFile(imagePath, imageBuffer);
+        chartUrl = `/uploads/${imageName}`; // Serve this static URL
+      }
+      // ... add similar logic for other chart types ...
+  
+      res.status(200).json({ chartData, chartType, chartUrl });
+  
+    } catch (error) {
+      console.error('Error analyzing data for', chartType, ':', error);
+      res.status(500).json({ message: `Error analyzing data for ${chartType}`, error: error.message });
+    }
+  };
