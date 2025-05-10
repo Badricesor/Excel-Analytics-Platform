@@ -85,6 +85,7 @@ export const uploadFile = async (req, res) => {
    console.log('Inside uploadFile function');
   upload.single('file')(req, res, async (err) => {
     console.log('After multer middleware');
+    console.log('req.file:', req.file);
     if (err) {
       return res.status(500).json({ message: 'Error uploading file.', error: err });
     }
@@ -96,6 +97,7 @@ export const uploadFile = async (req, res) => {
     const originalName = req.file.originalname;
 
     try {
+      console.log('File path:', filePath);
       const workbook = XLSX.readFile(filePath);
       const sheetName = workbook.SheetNames[0];
       const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
@@ -108,7 +110,7 @@ export const uploadFile = async (req, res) => {
       });
 
       const savedUpload = await uploadRecord.save();
-
+      console.log('Upload record saved:', savedUpload);
       res.status(200).json({
         message: 'File uploaded and processed successfully',
         data: jsonData,
