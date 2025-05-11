@@ -320,28 +320,33 @@ export const analyzeData = async (req, res) => {
 
     // const headers = jsonData[0];
     // console.log('Headers from Excel:', headers);
-
+    let headers = [];
+        if (jsonData && jsonData.length > 0) {
+           headers = jsonData[0];
+        }
+        console.log('Headers from Excel:', headers);
     // const labels = jsonData.slice(1).map(row => row[headers.indexOf(xAxis)] || '');
     // const dataValues = jsonData.slice(1).map(row => row[headers.indexOf(yAxis)] || 0);
 
     let labels = [];
         let dataValues = [];
 
-        if (headers) { // Only proceed if headers exist
-            labels = jsonData.slice(1).map(row => row[headers.indexOf(xAxis)] || '');
-            dataValues = jsonData.slice(1).map(row => row[headers.indexOf(yAxis)] || 0);
-        } else {
-             console.error('Error: No headers found in Excel file.');
-             return res.status(400).json({message: 'No headers found in the excel file'})
-        }
+        if(headers && headers.length > 0){
+          labels = jsonData.slice(1).map(row => row[headers.indexOf(xAxis)] || '');
+          dataValues = jsonData.slice(1).map(row => row[headers.indexOf(yAxis)] || 0);
+     }
+     else{
+          console.error('Headers are empty')
+          return res.status(400).json({message: 'No headers found in excel file'})
+     }
 
     console.log('Extracted Labels:', labels);  //and this
     console.log('Extracted Data Values:', dataValues);//and this
 
-    const firstRowKeys = Object.keys(jsonData[0]);
-    if (!firstRowKeys.includes(xAxis) || !firstRowKeys.includes(yAxis)) {
-      return res.status(400).json({ message: `Selected xAxis (${xAxis}) or yAxis (${yAxis}) not found in data. Available columns are: ${firstRowKeys.join(', ')}` });
-    }
+    // const firstRowKeys = Object.keys(jsonData[0]);
+    // if (!firstRowKeys.includes(xAxis) || !firstRowKeys.includes(yAxis)) {
+    //   return res.status(400).json({ message: `Selected xAxis (${xAxis}) or yAxis (${yAxis}) not found in data. Available columns are: ${firstRowKeys.join(', ')}` });
+    // }
 
     const chartData = {};
     let chartUrl = '';
