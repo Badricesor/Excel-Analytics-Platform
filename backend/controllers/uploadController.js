@@ -82,7 +82,8 @@ const upload = multer({
 });
 
 export const uploadFile = async (req, res) => {
-   console.log('Inside uploadFile function');
+  console.log('Received file upload request...');
+
   upload.single('file')(req, res, async (err) => {
     console.log('After multer middleware');
     console.log('req.file:', req.file);
@@ -95,12 +96,15 @@ export const uploadFile = async (req, res) => {
 
     const filePath = req.file.path; // Get the temporary file path
     const originalName = req.file.originalname;
+    console.log('File path:', filePath);
 
     try {
-      console.log('File path:', filePath);
+      console.log('Attempting to read workbook...')
       const workbook = XLSX.readFile(filePath);
       const sheetName = workbook.SheetNames[0];
+      console.log('Sheet name:', sheetName);
       const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
+      console.log('JSON data:', jsonData);
 
       const uploadRecord = new Upload({
         filename: originalName,
@@ -109,6 +113,7 @@ export const uploadFile = async (req, res) => {
         data: jsonData, // You might also store processed data if needed
       });
 
+      console.log('Creating upload record:', uploadRecord);
       const savedUpload = await uploadRecord.save();
       console.log('Upload record saved:', savedUpload);
       res.status(200).json({
@@ -117,9 +122,11 @@ export const uploadFile = async (req, res) => {
         uploadId: savedUpload._id,
         headers: Object.keys(jsonData[0] || {}),
       });
+      console.log('Upload successful response sent.');
     } catch (error) {
       console.error('Error processing uploaded file:', error);
       res.status(500).json({ message: 'Error processing uploaded file.', error });
+      console.log('Error response sent.');
     }
   });
 };

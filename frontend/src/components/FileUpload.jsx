@@ -54,7 +54,7 @@ const FileUpload = ({ onUploadSuccess }) => {
       disabled={uploading || !file}>
         {uploading ? 'Uploading...' : 'Upload'}
       </button>
-      {uploadError && <p className="text-red-500">{uploadError}</p>}
+      {error && <p className="error">{error}</p>}
     </div>
   );
 };
