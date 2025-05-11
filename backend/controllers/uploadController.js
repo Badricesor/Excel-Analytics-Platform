@@ -313,16 +313,27 @@ export const analyzeData = async (req, res) => {
     // const labels = jsonData.map(item => item[xAxis]);
     // const dataValues = jsonData.map(item => item[yAxis] || 0);
 
-    const labels = jsonData.slice(1).map(row => row[headers.indexOf(xAxis)] || '');
-    const dataValues = jsonData.slice(1).map(row => row[headers.indexOf(yAxis)] || 0);
-
     if (!jsonData || jsonData.length === 0) {
       console.error('Error: jsonData is empty or undefined.');
       return res.status(400).json({ message: 'No data found in the uploaded file.' });
     }
 
-    const headers = jsonData[0];
-    console.log('Headers from Excel:', headers);
+    // const headers = jsonData[0];
+    // console.log('Headers from Excel:', headers);
+
+    // const labels = jsonData.slice(1).map(row => row[headers.indexOf(xAxis)] || '');
+    // const dataValues = jsonData.slice(1).map(row => row[headers.indexOf(yAxis)] || 0);
+
+    let labels = [];
+        let dataValues = [];
+
+        if (headers) { // Only proceed if headers exist
+            labels = jsonData.slice(1).map(row => row[headers.indexOf(xAxis)] || '');
+            dataValues = jsonData.slice(1).map(row => row[headers.indexOf(yAxis)] || 0);
+        } else {
+             console.error('Error: No headers found in Excel file.');
+             return res.status(400).json({message: 'No headers found in the excel file'})
+        }
 
     console.log('Extracted Labels:', labels);  //and this
     console.log('Extracted Data Values:', dataValues);//and this
