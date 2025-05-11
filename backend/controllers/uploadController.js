@@ -1,50 +1,18 @@
 import { ChartJSNodeCanvas } from 'chartjs-node-canvas';
-import {
-  Chart,
-  LineController,
-  BarController,
-  PieController,
-  DoughnutController,
-  RadarController,
-  BubbleController,
-  ScatterController,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  BarElement,
-  ArcElement,
-  RadialLinearScale,
-  Title,
-  Legend,
-  Tooltip,
-} from 'chart.js';
-
-Chart.register(
-  LineController,
-  BarController,
-  PieController,
-  DoughnutController,
-  RadarController,
-  BubbleController,
-  ScatterController,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  BarElement,
-  ArcElement,
-  RadialLinearScale,
-  Title,
-  Legend,
-  Tooltip
-);
+import {  Chart,  LineController,  BarController,  PieController,  DoughnutController,  RadarController,  BubbleController,  ScatterController,CategoryScale,LinearScale,PointElement,LineElement,BarElement,ArcElement,RadialLinearScale,Title,Legend,Tooltip,} from 'chart.js';
+Chart.register(LineController,BarController,PieController,DoughnutController,RadarController,BubbleController,ScatterController,CategoryScale,LinearScale,PointElement,LineElement,BarElement,ArcElement,RadialLinearScale,Title,Legend,Tooltip);
 import fs from 'fs/promises';
 import multer from 'multer';
 import path from 'path';
 import os from 'os';
 import XLSX from 'xlsx';
 import { User, Upload } from '../models/index.js';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
 
 const width = 400; // Width of the chart image
 const height = 300; // Height of the chart image
@@ -172,8 +140,8 @@ export const analyzeData = async (req, res) => {
       chartUrl = `/uploads/${imageName}`; // Serve this static URL
     }
     // ... add similar logic for other chart types ...
-
-    res.status(200).json({ chartData, chartType, chartUrl });
+    res.status(200).json({ chartData: {}, chartType, chartUrl });
+    // res.status(200).json({ chartData, chartType, chartUrl });
 
   } catch (error) {
     console.error('Error analyzing data:', error);
