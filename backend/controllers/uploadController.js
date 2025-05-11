@@ -109,11 +109,14 @@ export const uploadFile = async (req, res) => {
       const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
       console.log('JSON data:', jsonData);
 
+      const userId = req.user._id;
+
       const uploadRecord = new Upload({
         filename: originalName,
         filePath: filePath, // Store the temporary file path in the database
         uploadDate: new Date(),
         data: jsonData, // You might also store processed data if needed
+        userId: userId,
       });
 
       console.log('Creating upload record:', uploadRecord);
@@ -126,6 +129,7 @@ export const uploadFile = async (req, res) => {
         headers: Object.keys(jsonData[0] || {}),
       });
       console.log('Upload successful response sent.');
+      
     } catch (error) {
       console.error('Error processing uploaded file:', error);
       res.status(500).json({ message: 'Error processing uploaded file.', error });
