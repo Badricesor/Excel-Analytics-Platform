@@ -84,7 +84,7 @@ const upload = multer({
 export const uploadFile = async (req, res) => {
   console.log('Received file upload request...');
 
-  upload.single('file')(req, res, async (err) => {
+  upload.single('excelFile')(req, res, async (err) => {
     console.log('After multer middleware');
     console.log('req.file:', req.file);
     if (err) {
