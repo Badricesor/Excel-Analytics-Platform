@@ -35,6 +35,15 @@ const getChartConfiguration = (chartType, labels, dataValues, xAxis, yAxis, json
     },
   };
 
+   // Add this check at the beginning of the function
+   if (!jsonData || jsonData.length === 0) {
+    return {
+        type: chartType,
+        data: { labels: [], datasets: [] }, // Return empty data
+        options: { responsive: true, maintainAspectRatio: false },
+    };
+}
+
   switch (chartType) {
     case 'bar':
       return {
@@ -92,11 +101,14 @@ const getChartConfiguration = (chartType, labels, dataValues, xAxis, yAxis, json
           },
         };
     case 'radar':
+      console.log("Radar jsonData:", jsonData);
+      console.log("Radar xAxis:", xAxis, "Radar yAxis:", yAxis);
         return {
             ...baseConfig,
             type: 'radar',
             data: {
-                ...baseConfig.data,
+                // ...baseConfig.data,
+                labels: labels, // Radar uses labels
                 datasets: [{
                     ...baseConfig.data.datasets[0],
                     backgroundColor: 'rgba(153, 102, 255, 0.2)',
@@ -122,6 +134,8 @@ const getChartConfiguration = (chartType, labels, dataValues, xAxis, yAxis, json
             }
         };
     case 'bubble':
+      console.log("Bubble jsonData:", jsonData); 
+      console.log("Bubble xAxis:", xAxis, "Bubble yAxis:", yAxis);
           return {
             ...baseConfig,
             type: 'bubble',
@@ -147,6 +161,8 @@ const getChartConfiguration = (chartType, labels, dataValues, xAxis, yAxis, json
             },
           };
     case 'scatter':
+      console.log("Scatter jsonData:", jsonData); 
+      console.log("Scatter xAxis:", xAxis, "Scatter yAxis:", yAxis);
           return {
             ...baseConfig,
             type: 'scatter',
@@ -282,6 +298,15 @@ export const analyzeData = async (req, res) => {
     const labels = jsonData.map(item => item[xAxis]);
     const dataValues = jsonData.map(item => item[yAxis] || 0);
 
+    if (!jsonData || jsonData.length === 0) {
+      return res.status(400).json({ message: 'No data found in the uploaded file.' });
+    }
+
+    const firstRowKeys = Object.keys(jsonData[0]);
+    if (!firstRowKeys.includes(xAxis) || !firstRowKeys.includes(yAxis)) {
+      return res.status(400).json({ message: `Selected xAxis (${xAxis}) or yAxis (${yAxis}) not found in data. Available columns are: ${firstRowKeys.join(', ')}` });
+    }
+
     const chartData = {};
     let chartUrl = '';
 
@@ -298,7 +323,7 @@ export const analyzeData = async (req, res) => {
       //   },
       // };
       const configuration = getChartConfiguration(chartType, labels, dataValues, xAxis, yAxis,);
-      console.log('Chart Configuration:', configuration);
+      console.log('Chart Configuration:', JSON.stringify(configuration, null, 2));
       const chartJSNodeCanvas = new ChartJSNodeCanvas({ width: 600, height: 400 });
       const imageBuffer = await chartJSNodeCanvas.renderToBuffer(configuration);
       const imageName = `bar_chart_${uploadId}.png`;
