@@ -257,7 +257,8 @@ const UserDashboard = () => {
                 {analysisResult?.chartUrl && (
                   <div className="mt-4">
                     <h3 className="text-lg text-gray-400 mb-2">Generated {chartType} Chart</h3>
-                    <img src={analysisResult.chartUrl} alt={`${chartType} Chart`} className="max-w-full" />
+                    {/* <img src={analysisResult.chartUrl} alt={`${chartType} Chart`} className="max-w-full" /> */}
+                    <img src={`https://excel-analytics-platform.onrender.com${analysisResult.chartUrl}`} alt="Generated Chart" className="max-w-full" />
                     <button onClick={() => handleDownloadChart(analysisResult.chartUrl, chartType)} className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 mt-2">
                       <ArrowDownTrayIcon className="h-5 w-5 inline-block mr-2" /> Download
                     </button>
