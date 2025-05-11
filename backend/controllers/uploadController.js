@@ -37,6 +37,23 @@ const getChartConfiguration = (chartType, labels, dataValues, xAxis, yAxis, json
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      scales: { // Define scales here
+        x: {
+            type: 'category', // Default to 'category' for x-axis
+            title: {
+                display: true,
+                text: xAxis
+            }
+        },
+        y: {
+            type: 'linear',  // Default to 'linear' for y-axis
+            beginAtZero: true,
+            title: {
+                display: true,
+                text: yAxis
+            }
+        }
+    },
       // Add more common options here as needed
     },
   };
@@ -54,63 +71,99 @@ const getChartConfiguration = (chartType, labels, dataValues, xAxis, yAxis, json
 
   switch (chartType) {
     case 'bar':
-      return {
-        ...baseConfig,
-        type: 'bar',
-        data: {
-          labels: labels,
-          datasets: [{
-            ...baseConfig.data.datasets[0],
-            backgroundColor: 'rgba(54, 162, 235, 0.8)',
-          }],
-        },
-      };
-    case 'line':
-      return {
-        ...baseConfig,
-        type: 'line',
-        data: {
-          labels: labels,
-          datasets: [{
-            ...baseConfig.data.datasets[0],
-            borderColor: 'rgba(75, 192, 192, 0.8)',
-            fill: false,
-          }],
-        },
-      };
-    case 'pie':
-      return {
-        ...baseConfig,
-        type: 'pie',
-        data: {
-          labels: labels,
-          backgroundColor: [
-            'rgba(255, 99, 132, 0.8)',
-            'rgba(54, 162, 235, 0.8)',
-            'rgba(255, 206, 86, 0.8)',
-            'rgba(75, 192, 192, 0.8)',
-            'rgba(153, 102, 255, 0.8)',
-          ],
-        },
-      };
-      case 'doughnut':
-        return {
-          ...baseConfig,
-          type: 'doughnut',
-          data: {
-            labels: labels,
-            datasets: [{
-              ...baseConfig.data.datasets[0],
-              backgroundColor: [
-                  'rgba(255, 99, 132, 0.8)',
-                  'rgba(54, 162, 235, 0.8)',
-                  'rgba(255, 206, 86, 0.8)',
-                  'rgba(75, 192, 192, 0.8)',
-                  'rgba(153, 102, 255, 0.8)',
-              ],
-          }],
-          },
-        };
+            return {
+                ...baseConfig,
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        ...baseConfig.data.datasets[0],
+                        backgroundColor: 'rgba(54, 162, 235, 0.8)',
+                    }],
+                },
+                 options: {
+                    ...baseConfig.options,
+                    scales: {
+                        x: {
+                            type: 'category',
+                            title: {
+                                display: true,
+                                text: xAxis
+                            }
+                        },
+                        y: {
+                            type: 'linear',
+                            beginAtZero: true,
+                             title: {
+                                display: true,
+                                text: yAxis
+                            }
+                        }
+                    }
+                }
+            };
+            case 'line':
+              return {
+                  ...baseConfig,
+                  type: 'line',
+                  data: {
+                      labels: labels,
+                      datasets: [{
+                          ...baseConfig.data.datasets[0],
+                          borderColor: 'rgba(75, 192, 192, 0.8)',
+                          fill: false,
+                      }],
+                  },
+                  options: {
+                      ...baseConfig.options,
+                       scales: {
+                          x: {
+                              type: 'category',
+                               title: {
+                                  display: true,
+                                  text: xAxis
+                              }
+                          },
+                          y: {
+                              type: 'linear',
+                              beginAtZero: true,
+                               title: {
+                                  display: true,
+                                  text: yAxis
+                              }
+                          }
+                      }
+                  }
+              };
+              case 'pie':
+                case 'doughnut':
+                    const pieDoughnutOptions = {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'top'
+                            },
+                        },
+                    };
+                    return {
+                        ...baseConfig,
+                        type: chartType,
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                ...baseConfig.data.datasets[0],
+                                backgroundColor: [
+                                    'rgba(255, 99, 132, 0.8)',
+                                    'rgba(54, 162, 235, 0.8)',
+                                    'rgba(255, 206, 86, 0.8)',
+                                    'rgba(75, 192, 192, 0.8)',
+                                    'rgba(153, 102, 255, 0.8)',
+                                ],
+                            }],
+                        },
+                        options: pieDoughnutOptions, // Use the defined options
+                    };
     case 'radar':
       console.log("Radar jsonData:", jsonData);
       console.log("Radar xAxis:", xAxis, "Radar yAxis:", yAxis);
@@ -202,14 +255,27 @@ const getChartConfiguration = (chartType, labels, dataValues, xAxis, yAxis, json
       return {
         ...baseConfig,
         type: 'bar',
-        data: {
-          labels: labels,
-          datasets: [{
-            ...baseConfig.data.datasets[0],
-            backgroundColor: 'rgba(54, 162, 235, 0.8)',
-          }],
-        },
-      };
+         options: {
+            ...baseConfig.options,
+             scales: {
+                x: {
+                    type: 'category',
+                     title: {
+                        display: true,
+                        text: xAxis
+                    }
+                },
+                y: {
+                    type: 'linear',
+                    beginAtZero: true,
+                     title: {
+                        display: true,
+                        text: yAxis
+                    }
+                }
+            }
+        }
+    };
   }
 };
 
