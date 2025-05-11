@@ -43,7 +43,7 @@ import fs from 'fs/promises';
 import multer from 'multer';
 import path from 'path';
 import os from 'os';
-import xlsx from 'xlsx';
+import XLSX from 'xlsx';
 // import mongoose from 'mongoose';
 // import UserSchema from './UserModel.js';
 // import UploadSchema from './UploadModel.js';
