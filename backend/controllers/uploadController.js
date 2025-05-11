@@ -42,14 +42,14 @@ const getChartConfiguration = (chartType, labels, dataValues, xAxis, yAxis, json
   };
 
 
-   // Add this check at the beginning of the function
-   if (!jsonData || jsonData.length === 0) {
-    return {
-        type: chartType,
-        data: { labels: [], datasets: [] }, // Return empty data
-        options: { responsive: true, maintainAspectRatio: false },
-    };
-}
+//    // Add this check at the beginning of the function
+//    if (!jsonData || jsonData.length === 0) {
+//     return {
+//         type: chartType,
+//         data: { labels: [], datasets: [] }, // Return empty data
+//         options: { responsive: true, maintainAspectRatio: false },
+//     };
+// }
 
 
   switch (chartType) {
@@ -58,7 +58,7 @@ const getChartConfiguration = (chartType, labels, dataValues, xAxis, yAxis, json
         ...baseConfig,
         type: 'bar',
         data: {
-          ...baseConfig.data,
+          labels: labels,
           datasets: [{
             ...baseConfig.data.datasets[0],
             backgroundColor: 'rgba(54, 162, 235, 0.8)',
@@ -70,7 +70,7 @@ const getChartConfiguration = (chartType, labels, dataValues, xAxis, yAxis, json
         ...baseConfig,
         type: 'line',
         data: {
-          ...baseConfig.data,
+          labels: labels,
           datasets: [{
             ...baseConfig.data.datasets[0],
             borderColor: 'rgba(75, 192, 192, 0.8)',
@@ -83,7 +83,7 @@ const getChartConfiguration = (chartType, labels, dataValues, xAxis, yAxis, json
         ...baseConfig,
         type: 'pie',
         data: {
-          ...baseConfig.data,
+          labels: labels,
           backgroundColor: [
             'rgba(255, 99, 132, 0.8)',
             'rgba(54, 162, 235, 0.8)',
@@ -305,6 +305,7 @@ export const analyzeData = async (req, res) => {
     const filePath = uploadRecord.filePath; // Retrieve the stored file path
     const workbook = XLSX.readFile(filePath);
     const sheetName = workbook.SheetNames[0];
+    const sheet = workbook.Sheets[sheetName];
     const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
 
     console.log('jsonData:', jsonData); // Add this
@@ -313,6 +314,24 @@ export const analyzeData = async (req, res) => {
     // const labels = jsonData.map(item => item[xAxis]);
     // const dataValues = jsonData.map(item => item[yAxis] || 0);
 
+    // Manually extract headers
+    let headers = [];
+    if (sheet && sheet['!ref']) {  // Ensure sheet and ref exist
+        const range = XLSX.utils.decode_range(sheet['!ref']);
+        if (range.s.r === 0) { // Check if the first row is the header row
+            headers = [];
+            for (let c = range.s.c; c <= range.e.c; ++c) {
+                const cell = sheet[XLSX.utils.encode_cell({ r: 0, c: c })];
+                if (cell && cell.v) {
+                    headers.push(cell.v);  // Get the cell value as header
+                } else {
+                   headers.push(`Column${c}`); //make up a name
+                }
+            }
+        }
+    }
+    console.log('Headers from Excel:', headers);
+
     if (!jsonData || jsonData.length === 0) {
       console.error('Error: jsonData is empty or undefined.');
       return res.status(400).json({ message: 'No data found in the uploaded file.' });
@@ -320,11 +339,13 @@ export const analyzeData = async (req, res) => {
 
     // const headers = jsonData[0];
     // console.log('Headers from Excel:', headers);
-    let headers = [];
-        if (jsonData && jsonData.length > 0 && Array.isArray(jsonData[0])) {
-            headers = jsonData[0];
-        }
-        console.log('Headers from Excel:', headers);
+
+    // let headers = [];
+    //     if (jsonData && jsonData.length > 0 && Array.isArray(jsonData[0])) {
+    //         headers = jsonData[0];
+    //     }
+    //     console.log('Headers from Excel:', headers);
+
     // const labels = jsonData.slice(1).map(row => row[headers.indexOf(xAxis)] || '');
     // const dataValues = jsonData.slice(1).map(row => row[headers.indexOf(yAxis)] || 0);
 
@@ -343,14 +364,16 @@ export const analyzeData = async (req, res) => {
     console.log('Extracted Labels:', labels);  //and this
     console.log('Extracted Data Values:', dataValues);//and this
 
-    const firstRowKeys = Object.keys(jsonData[0]);
-    if (!firstRowKeys.includes(xAxis) || !firstRowKeys.includes(yAxis)) {
-      return res.status(400).json({ message: `Selected xAxis (${xAxis}) or yAxis (${yAxis}) not found in data. Available columns are: ${firstRowKeys.join(', ')}` });
-    }
+    // const firstRowKeys = Object.keys(jsonData[0]);
+    // if (!firstRowKeys.includes(xAxis) || !firstRowKeys.includes(yAxis)) {
+    //   return res.status(400).json({ message: `Selected xAxis (${xAxis}) or yAxis (${yAxis}) not found in data. Available columns are: ${firstRowKeys.join(', ')}` });
+    // }
 
     // const chartData = {};
     let chartUrl = '';
-
+    const width = 600;
+        const height = 400;
+        const chartJSNodeCanvas = new ChartJSNodeCanvas({ width, height });
     // if (chartType === 'bar') {
       // const configuration = {
       //   chartType,
@@ -363,11 +386,11 @@ export const analyzeData = async (req, res) => {
       //     }],
       //   },
       // };
-      const configuration = getChartConfiguration(chartType, labels, dataValues, xAxis, yAxis,);
+      const configuration = getChartConfiguration(chartType, labels, dataValues, xAxis, yAxis,  jsonData);
       console.log('Chart Configuration:', JSON.stringify(configuration, null, 2));
-      const chartJSNodeCanvas = new ChartJSNodeCanvas({ width: 600, height: 400 });
+      // const chartJSNodeCanvas = new ChartJSNodeCanvas({ width: 600, height: 400 });
       const imageBuffer = await chartJSNodeCanvas.renderToBuffer(configuration);
-      const imageName = `bar_chart_${uploadId}.png`;
+      const imageName = `${chartType}_chart_${uploadId}.png`;
       const imagePath = join(process.cwd(), 'uploads', imageName);
       await fs.writeFile(imagePath, imageBuffer);
       chartUrl = `/uploads/${imageName}`; // Serve this static URL
