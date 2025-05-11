@@ -90,14 +90,17 @@ const getChartConfiguration = (chartType, labels, dataValues, xAxis, yAxis, json
           ...baseConfig,
           type: 'doughnut',
           data: {
-            ...baseConfig.data,
-            backgroundColor: [
-              'rgba(255, 99, 132, 0.8)',
-              'rgba(54, 162, 235, 0.8)',
-              'rgba(255, 206, 86, 0.8)',
-              'rgba(75, 192, 192, 0.8)',
-              'rgba(153, 102, 255, 0.8)',
-            ],
+            labels: labels,
+            datasets: [{
+              ...baseConfig.data.datasets[0],
+              backgroundColor: [
+                  'rgba(255, 99, 132, 0.8)',
+                  'rgba(54, 162, 235, 0.8)',
+                  'rgba(255, 206, 86, 0.8)',
+                  'rgba(75, 192, 192, 0.8)',
+                  'rgba(153, 102, 255, 0.8)',
+              ],
+          }],
           },
         };
     case 'radar':
@@ -110,14 +113,15 @@ const getChartConfiguration = (chartType, labels, dataValues, xAxis, yAxis, json
                 // ...baseConfig.data,
                 labels: labels, // Radar uses labels
                 datasets: [{
-                    ...baseConfig.data.datasets[0],
-                    backgroundColor: 'rgba(153, 102, 255, 0.2)',
-                    borderColor: 'rgba(153, 102, 255, 1)',
-                    pointBackgroundColor: 'rgba(153, 102, 255, 1)',
-                    pointBorderColor: '#fff',
-                    pointHoverBackgroundColor: '#fff',
-                    pointHoverBorderColor: 'rgba(153, 102, 255, 1)',
-                }],
+                  label: `${yAxis} vs ${xAxis}`,
+                  data: dataValues,  //and dataValues
+                  backgroundColor: 'rgba(153, 102, 255, 0.2)',
+                  borderColor: 'rgba(153, 102, 255, 1)',
+                  pointBackgroundColor: 'rgba(153, 102, 255, 1)',
+                  pointBorderColor: '#fff',
+                  pointHoverBackgroundColor: '#fff',
+                  pointHoverBorderColor: 'rgba(153, 102, 255, 1)',
+              }],
             },
             options: {
                 ...baseConfig.options,
@@ -191,7 +195,7 @@ const getChartConfiguration = (chartType, labels, dataValues, xAxis, yAxis, json
         ...baseConfig,
         type: 'bar',
         data: {
-          ...baseConfig.data,
+          labels: labels,
           datasets: [{
             ...baseConfig.data.datasets[0],
             backgroundColor: 'rgba(54, 162, 235, 0.8)',
