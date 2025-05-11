@@ -347,8 +347,10 @@ const UserDashboard = () => {
             <h2 className="text-xl text-gray-400 mb-4">Profile</h2>
             {userProfile && (
               <div className="bg-gray-800 rounded-md shadow-md p-6">
-                <p className="text-gray-400">Username: {userProfile.username}</p>
-                <p className="text-gray-400">Email: {userProfile.email}</p>
+                <label className="text-red-500" >Username</label>
+                <p className="text-gray-400"> {userProfile.username}</p>
+                <label className="text-red-500" >Email</label>
+                <p className="text-gray-400">{userProfile.email}</p>
                 {/* Add more profile information or edit options here */}
               </div>
             )}
