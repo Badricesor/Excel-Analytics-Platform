@@ -20,6 +20,12 @@ const chartJSNodeCanvas = new ChartJSNodeCanvas({ width, height });
 
 // Function to generate chart configuration based on chart type
 const getChartConfiguration = (chartType, labels, dataValues, xAxis, yAxis, jsonData) => {
+  
+  console.log(`Generating chart of type: ${chartType}`);  // Keep this
+  console.log('Labels:', labels);
+  console.log('Data Values:', dataValues);
+  console.log('jsonData', jsonData);
+
   const baseConfig = {
     data: {
       labels: labels,
@@ -35,6 +41,7 @@ const getChartConfiguration = (chartType, labels, dataValues, xAxis, yAxis, json
     },
   };
 
+
    // Add this check at the beginning of the function
    if (!jsonData || jsonData.length === 0) {
     return {
@@ -43,6 +50,7 @@ const getChartConfiguration = (chartType, labels, dataValues, xAxis, yAxis, json
         options: { responsive: true, maintainAspectRatio: false },
     };
 }
+
 
   switch (chartType) {
     case 'bar':
@@ -299,12 +307,18 @@ export const analyzeData = async (req, res) => {
     const sheetName = workbook.SheetNames[0];
     const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
 
+    console.log('jsonData:', jsonData); // Add this
+    console.log('xAxis:', xAxis, 'yAxis:', yAxis); //and this
+
     const labels = jsonData.map(item => item[xAxis]);
     const dataValues = jsonData.map(item => item[yAxis] || 0);
 
     if (!jsonData || jsonData.length === 0) {
       return res.status(400).json({ message: 'No data found in the uploaded file.' });
     }
+
+    console.log('Extracted Labels:', labels);  //and this
+    console.log('Extracted Data Values:', dataValues);//and this
 
     const firstRowKeys = Object.keys(jsonData[0]);
     if (!firstRowKeys.includes(xAxis) || !firstRowKeys.includes(yAxis)) {
