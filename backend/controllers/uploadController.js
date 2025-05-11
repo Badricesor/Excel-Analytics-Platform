@@ -135,7 +135,10 @@ export const analyzeData = async (req, res) => {
       // const canvasRenderService = new CanvasRenderService(600, 400);
       const imageBuffer = await chartJSNodeCanvas.renderToBuffer(configuration);
       const imageName = `bar_chart_${uploadId}.png`;
-      const imagePath = path.join(__dirname, '../../uploads', imageName); // Adjust path as needed
+
+      // const imagePath = path.join(__dirname, '../../uploads', imageName); // Adjust path as needed
+      const imagePath = join(process.cwd(), 'uploads', imageName);
+      
       await fs.writeFile(imagePath, imageBuffer);
       chartUrl = `/uploads/${imageName}`; // Serve this static URL
     }
