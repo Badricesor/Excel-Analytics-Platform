@@ -88,15 +88,18 @@ export const uploadFile = async (req, res) => {
     console.log('After multer middleware');
     console.log('req.file:', req.file);
     if (err) {
+      console.error('Multer error:', err);
       return res.status(500).json({ message: 'Error uploading file.', error: err });
     }
     if (!req.file) {
+      console.log('No file uploaded.');
       return res.status(400).json({ message: 'No file uploaded.' });
     }
 
     const filePath = req.file.path; // Get the temporary file path
     const originalName = req.file.originalname;
     console.log('File path:', filePath);
+    console.log('Original name:', originalName);
 
     try {
       console.log('Attempting to read workbook...')
