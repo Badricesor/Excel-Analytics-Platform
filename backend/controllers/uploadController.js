@@ -321,8 +321,8 @@ export const analyzeData = async (req, res) => {
     // const headers = jsonData[0];
     // console.log('Headers from Excel:', headers);
     let headers = [];
-        if (jsonData && jsonData.length > 0) {
-           headers = jsonData[0];
+        if (jsonData && jsonData.length > 0 && Array.isArray(jsonData[0])) {
+            headers = jsonData[0];
         }
         console.log('Headers from Excel:', headers);
     // const labels = jsonData.slice(1).map(row => row[headers.indexOf(xAxis)] || '');
@@ -343,12 +343,12 @@ export const analyzeData = async (req, res) => {
     console.log('Extracted Labels:', labels);  //and this
     console.log('Extracted Data Values:', dataValues);//and this
 
-    // const firstRowKeys = Object.keys(jsonData[0]);
-    // if (!firstRowKeys.includes(xAxis) || !firstRowKeys.includes(yAxis)) {
-    //   return res.status(400).json({ message: `Selected xAxis (${xAxis}) or yAxis (${yAxis}) not found in data. Available columns are: ${firstRowKeys.join(', ')}` });
-    // }
+    const firstRowKeys = Object.keys(jsonData[0]);
+    if (!firstRowKeys.includes(xAxis) || !firstRowKeys.includes(yAxis)) {
+      return res.status(400).json({ message: `Selected xAxis (${xAxis}) or yAxis (${yAxis}) not found in data. Available columns are: ${firstRowKeys.join(', ')}` });
+    }
 
-    const chartData = {};
+    // const chartData = {};
     let chartUrl = '';
 
     // if (chartType === 'bar') {
