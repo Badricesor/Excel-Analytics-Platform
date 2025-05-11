@@ -44,20 +44,11 @@ import multer from 'multer';
 import path from 'path';
 import os from 'os';
 import XLSX from 'xlsx';
-// import mongoose from 'mongoose';
-// import UserSchema from './UserModel.js';
-// import UploadSchema from './UploadModel.js';
 import { User, Upload } from '../models/index.js';
-// import User from '../models/UserModel.js';
-// import Upload from '../models/Upload.js'; // Adjust the path to your Upload model
-// import { v4 as uuidv4 } from 'uuid';
 
 const width = 400; // Width of the chart image
 const height = 300; // Height of the chart image
 const chartJSNodeCanvas = new ChartJSNodeCanvas({ width, height });
-
-// Configure multer for file uploads to the OS temporary directory
-
 
 // Configure multer storage (using the /tmp directory as shown in your screenshot)
 const storage = multer.diskStorage({
@@ -129,7 +120,7 @@ export const uploadFile = async (req, res) => {
         headers: Object.keys(jsonData[0] || {}),
       });
       console.log('Upload successful response sent.');
-      
+
     } catch (error) {
       console.error('Error processing uploaded file:', error);
       res.status(500).json({ message: 'Error processing uploaded file.', error });
@@ -172,8 +163,9 @@ export const analyzeData = async (req, res) => {
           }],
         },
       };
-      const canvasRenderService = new CanvasRenderService(600, 400);
-      const imageBuffer = await canvasRenderService.renderToBuffer(configuration);
+      const chartJSNodeCanvas = new ChartJSNodeCanvas({ width: 600, height: 400 });
+      // const canvasRenderService = new CanvasRenderService(600, 400);
+      const imageBuffer = await chartJSNodeCanvas.renderToBuffer(configuration);
       const imageName = `bar_chart_${uploadId}.png`;
       const imagePath = path.join(__dirname, '../../uploads', imageName); // Adjust path as needed
       await fs.writeFile(imagePath, imageBuffer);
