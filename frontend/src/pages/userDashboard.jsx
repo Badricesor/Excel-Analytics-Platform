@@ -120,44 +120,51 @@ const UserDashboard = () => {
 
   const handleGenerateAllCharts = async (event) => {
     event.preventDefault();
-
     if (!selectedFileId) {
-      setError("Please upload an excel file first.");
-      return;
+        setError("Please upload an excel file first.");
+        return;
     }
     if (!xAxisColumn || !yAxisColumn) {
-      setError("Please select both X and Y axes.");
-      return;
+        setError("Please select both X and Y axes.");
+        return;
     }
-
     setLoadingAnalysis(true);
-    setError('');
-    setAllAnalysisResults([]);
+    setError("");
+    setAllAnalysisResults([]); // Clear previous results
+
     const token = localStorage.getItem('token');
-    const results = [];
 
-    for (const chartOption of chartTypeOptions) {
-      try {
-        const res = await axios.post(
-          `${import.meta.env.VITE_API_URL}/api/version1/analyze/${selectedFileId}`,
-          { xAxis: xAxisColumn, yAxis: yAxisColumn, chartType: chartOption.value },
-          {
+    try {
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/version1/uploads/${selectedFileId}/generate-all-charts`, { // Corrected route
+            method: 'POST',
             headers: {
-              Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
             },
-          }
-        );
-        results.push({ chartType: chartOption.value, data: res.data });
-      } catch (err) {
-        console.error(`Error generating ${chartOption.label} chart:`, err);
-        setError(`Error generating ${chartOption.label} chart: ${err.response?.data?.message || err.message}`);
-        // You might want to decide if you want to stop on the first error or continue
-      }
-    }
+            body: JSON.stringify({ xAxis: xAxisColumn, yAxis: yAxisColumn }),
+        });
 
-    setAllAnalysisResults(results);
-    setLoadingAnalysis(false);
-  };
+        if (!res.ok) {
+            const errorData = await res.json();
+            throw new Error(errorData.message || 'Failed to generate charts');
+        }
+
+        const data = await res.json(); // Get the JSON response
+        console.log('Response from generate-all-charts:', data); // Log the entire response
+
+        if (data && data.chartUrls && Array.isArray(data.chartUrls)) {
+            setAllAnalysisResults(data.chartUrls); // Store the array of URLs
+        } else {
+            setError("No chart URLs received from the server.");
+        }
+
+    } catch (err) {
+        console.error("Error generating all charts:", err);
+        setError(`Error generating charts: ${err.message}`);
+    } finally {
+        setLoadingAnalysis(false);
+    }
+};
 
   const handleDownloadChart = (chartUrl, chartType) => {
     if (chartUrl) {

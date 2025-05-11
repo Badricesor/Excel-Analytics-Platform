@@ -472,3 +472,62 @@ export const analyzeData = async (req, res) => {
     res.status(500).json({ message: 'Error analyzing data.', error });
   }
 };
+
+export const generateAllCharts = async (req, res) => {
+  const { uploadId } = req.params;
+  const { xAxis, yAxis } = req.body;
+  const chartTypes = ['bar', 'line', 'pie', 'doughnut', 'radar', 'bubble', 'scatter'];
+  const generatedChartUrls = [];
+
+  try {
+      const uploadRecord = await Upload.findById(uploadId);
+      if (!uploadRecord) {
+          return res.status(404).json({ message: 'Upload record not found.' });
+      }
+
+      const filePath = uploadRecord.filePath;
+      const workbook = XLSX.readFile(filePath);
+      const sheetName = workbook.SheetNames[0];
+      const sheet = workbook.Sheets[sheetName];
+      const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+      let headers = [];
+      if (jsonData && jsonData.length > 0 && Array.isArray(jsonData[0])) {
+          headers = jsonData[0];
+      }
+
+      let labels = [];
+      let dataValues = [];
+
+      if (headers && headers.length > 0) {
+          labels = jsonData.slice(1).map(row => row[headers.indexOf(xAxis)] || '');
+          dataValues = jsonData.slice(1).map(row => row[headers.indexOf(yAxis)] || 0);
+      } else {
+          return res.status(400).json({ message: 'No headers found in the Excel file.' });
+      }
+
+      const width = 600;
+      const height = 400;
+      const chartJSNodeCanvas = new ChartJSNodeCanvas({ width, height });
+
+      for (const chartType of chartTypes) {
+          const configuration = getChartConfiguration(chartType, labels, dataValues, xAxis, yAxis, jsonData);
+          try {
+              const imageBuffer = await chartJSNodeCanvas.renderToBuffer(configuration);
+              const imageName = `<span class="math-inline">\{chartType\}\_chart\_</span>{uploadId}.png`;
+              const imagePath = join(process.cwd(), 'uploads', imageName);
+              await fs.writeFile(imagePath, imageBuffer);
+              generatedChartUrls.push(`/uploads/${imageName}`);
+          } catch (renderError) {
+              console.error(`Error rendering ${chartType} chart:`, renderError);
+              // Optionally, you could skip this chart and continue with others
+          }
+      }
+
+      res.status(200).json({ message: 'All charts generated successfully.', chartUrls: generatedChartUrls });
+
+  } catch (error) {
+      console.error('Error generating all charts:', error);
+      res.status(500).json({ message: 'Error generating all charts.', error });
+  }
+};
