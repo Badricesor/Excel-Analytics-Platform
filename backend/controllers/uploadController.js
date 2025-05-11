@@ -4,7 +4,7 @@ Chart.register(LineController,BarController,PieController,DoughnutController,Rad
 import fs from 'fs/promises';
 import multer from 'multer';
 import path from 'path';
-import os from 'os';
+// import os from 'os';
 import XLSX from 'xlsx';
 import { User, Upload } from '../models/index.js';
 import { fileURLToPath } from 'url';
@@ -13,10 +13,177 @@ import { dirname, join } from 'path';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-
 const width = 400; // Width of the chart image
 const height = 300; // Height of the chart image
 const chartJSNodeCanvas = new ChartJSNodeCanvas({ width, height });
+
+
+// Function to generate chart configuration based on chart type
+const getChartConfiguration = (chartType, labels, dataValues, xAxis, yAxis) => {
+  const baseConfig = {
+    data: {
+      labels: labels,
+      datasets: [{
+        label: `${yAxis} vs ${xAxis}`,
+        data: dataValues,
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      // Add more common options here as needed
+    },
+  };
+
+  switch (chartType) {
+    case 'bar':
+      return {
+        ...baseConfig,
+        type: 'bar',
+        data: {
+          ...baseConfig.data,
+          datasets: [{
+            ...baseConfig.data.datasets[0],
+            backgroundColor: 'rgba(54, 162, 235, 0.8)',
+          }],
+        },
+      };
+    case 'line':
+      return {
+        ...baseConfig,
+        type: 'line',
+        data: {
+          ...baseConfig.data,
+          datasets: [{
+            ...baseConfig.data.datasets[0],
+            borderColor: 'rgba(75, 192, 192, 0.8)',
+            fill: false,
+          }],
+        },
+      };
+    case 'pie':
+      return {
+        ...baseConfig,
+        type: 'pie',
+        data: {
+          ...baseConfig.data,
+          backgroundColor: [
+            'rgba(255, 99, 132, 0.8)',
+            'rgba(54, 162, 235, 0.8)',
+            'rgba(255, 206, 86, 0.8)',
+            'rgba(75, 192, 192, 0.8)',
+            'rgba(153, 102, 255, 0.8)',
+          ],
+        },
+      };
+      case 'doughnut':
+        return {
+          ...baseConfig,
+          type: 'doughnut',
+          data: {
+            ...baseConfig.data,
+            backgroundColor: [
+              'rgba(255, 99, 132, 0.8)',
+              'rgba(54, 162, 235, 0.8)',
+              'rgba(255, 206, 86, 0.8)',
+              'rgba(75, 192, 192, 0.8)',
+              'rgba(153, 102, 255, 0.8)',
+            ],
+          },
+        };
+    case 'radar':
+        return {
+            ...baseConfig,
+            type: 'radar',
+            data: {
+                ...baseConfig.data,
+                datasets: [{
+                    ...baseConfig.data.datasets[0],
+                    backgroundColor: 'rgba(153, 102, 255, 0.2)',
+                    borderColor: 'rgba(153, 102, 255, 1)',
+                    pointBackgroundColor: 'rgba(153, 102, 255, 1)',
+                    pointBorderColor: '#fff',
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: 'rgba(153, 102, 255, 1)',
+                }],
+            },
+            options: {
+                ...baseConfig.options,
+                // специфичные опции для графика radar
+                scales: {
+                    r: {
+                        angleLines: {
+                            display: true
+                        },
+                        suggestedMin: 0,
+                        suggestedMax: Math.max(...dataValues)
+                    }
+                }
+            }
+        };
+    case 'bubble':
+          return {
+            ...baseConfig,
+            type: 'bubble',
+            data: {
+              datasets: [{
+                label: `${yAxis} vs ${xAxis}`,
+                data: jsonData.map(item => ({
+                  x: item[xAxis],
+                  y: item[yAxis],
+                  r: 10, // You might need a column for radius
+                })),
+                backgroundColor: 'rgba(255, 99, 132, 0.6)',
+                hoverBackgroundColor: 'rgba(255, 99, 132, 0.8)',
+                borderWidth: 0,
+              }],
+            },
+            options: {
+              ...baseConfig.options,
+              scales: {
+                x: { type: 'linear', position: 'bottom' },
+                y: { type: 'linear', position: 'left' },
+              },
+            },
+          };
+    case 'scatter':
+          return {
+            ...baseConfig,
+            type: 'scatter',
+            data: {
+              datasets: [{
+                label: `${yAxis} vs ${xAxis}`,
+                data: jsonData.map(item => ({
+                  x: item[xAxis],
+                  y: item[yAxis],
+                })),
+                backgroundColor: 'rgba(255, 159, 64, 0.8)',
+                borderColor: 'rgba(255, 159, 64, 1)',
+                borderWidth: 1,
+              }],
+            },
+            options: {
+              ...baseConfig.options,
+              scales: {
+                x: { type: 'linear', position: 'bottom' },
+                y: { type: 'linear', position: 'left' },
+              },
+            },
+          };
+    default:
+      return {
+        ...baseConfig,
+        type: 'bar',
+        data: {
+          ...baseConfig.data,
+          datasets: [{
+            ...baseConfig.data.datasets[0],
+            backgroundColor: 'rgba(54, 162, 235, 0.8)',
+          }],
+        },
+      };
+  }
+};
 
 // Configure multer storage (using the /tmp directory as shown in your screenshot)
 const storage = multer.diskStorage({
@@ -108,7 +275,6 @@ export const analyzeData = async (req, res) => {
     }
 
     const filePath = uploadRecord.filePath; // Retrieve the stored file path
-
     const workbook = XLSX.readFile(filePath);
     const sheetName = workbook.SheetNames[0];
     const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
@@ -119,55 +285,29 @@ export const analyzeData = async (req, res) => {
     const chartData = {};
     let chartUrl = '';
 
-    if (chartType === 'bar') {
-      const configuration = {
-        type: 'bar',
-        data: {
-          labels: labels,
-          datasets: [{
-            label: `${yAxis} vs ${xAxis}`,
-            data: dataValues,
-            backgroundColor: 'rgba(54, 162, 235, 0.8)',
-          }],
-        },
-      };
+    // if (chartType === 'bar') {
+      // const configuration = {
+      //   type: 'bar',
+      //   data: {
+      //     labels: labels,
+      //     datasets: [{
+      //       label: `${yAxis} vs ${xAxis}`,
+      //       data: dataValues,
+      //       backgroundColor: 'rgba(54, 162, 235, 0.8)',
+      //     }],
+      //   },
+      // };
+      const configuration = getChartConfiguration(chartType, labels, dataValues, xAxis, yAxis,);
       const chartJSNodeCanvas = new ChartJSNodeCanvas({ width: 600, height: 400 });
-      // const canvasRenderService = new CanvasRenderService(600, 400);
       const imageBuffer = await chartJSNodeCanvas.renderToBuffer(configuration);
       const imageName = `bar_chart_${uploadId}.png`;
-
-      // const imagePath = path.join(__dirname, '../../uploads', imageName); // Adjust path as needed
       const imagePath = join(process.cwd(), 'uploads', imageName);
-      
       await fs.writeFile(imagePath, imageBuffer);
       chartUrl = `/uploads/${imageName}`; // Serve this static URL
-    }
+    // }
     
     // ... add similar logic for other chart types ...
-    if (chartType === 'scatter') {
-      const configuration = {
-        type: 'scatter',
-        data: {
-          labels: labels,
-          datasets: [{
-            label: `${yAxis} vs ${xAxis}`,
-            data: dataValues,
-            backgroundColor: 'rgba(54, 162, 235, 0.8)',
-          }],
-        },
-      };
-      const chartJSNodeCanvas = new ChartJSNodeCanvas({ width: 600, height: 400 });
-      // const canvasRenderService = new CanvasRenderService(600, 400);
-      const imageBuffer = await chartJSNodeCanvas.renderToBuffer(configuration);
-      const imageName = `bar_chart_${uploadId}.png`;
-
-      // const imagePath = path.join(__dirname, '../../uploads', imageName); // Adjust path as needed
-      const imagePath = join(process.cwd(), 'uploads', imageName);
-      
-      await fs.writeFile(imagePath, imageBuffer);
-      chartUrl = `/uploads/${imageName}`; // Serve this static URL
-    }
-
+    
     res.status(200).json({ chartData: {}, chartType, chartUrl });
     // res.status(200).json({ chartData, chartType, chartUrl });
 
