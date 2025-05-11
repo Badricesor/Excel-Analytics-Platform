@@ -310,12 +310,19 @@ export const analyzeData = async (req, res) => {
     console.log('jsonData:', jsonData); // Add this
     console.log('xAxis:', xAxis, 'yAxis:', yAxis); //and this
 
-    const labels = jsonData.map(item => item[xAxis]);
-    const dataValues = jsonData.map(item => item[yAxis] || 0);
+    // const labels = jsonData.map(item => item[xAxis]);
+    // const dataValues = jsonData.map(item => item[yAxis] || 0);
+
+    const labels = jsonData.slice(1).map(row => row[headers.indexOf(xAxis)] || '');
+    const dataValues = jsonData.slice(1).map(row => row[headers.indexOf(yAxis)] || 0);
 
     if (!jsonData || jsonData.length === 0) {
+      console.error('Error: jsonData is empty or undefined.');
       return res.status(400).json({ message: 'No data found in the uploaded file.' });
     }
+
+    const headers = jsonData[0];
+    console.log('Headers from Excel:', headers);
 
     console.log('Extracted Labels:', labels);  //and this
     console.log('Extracted Data Values:', dataValues);//and this
