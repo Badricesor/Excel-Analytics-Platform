@@ -19,7 +19,7 @@ const chartJSNodeCanvas = new ChartJSNodeCanvas({ width, height });
 
 
 // Function to generate chart configuration based on chart type
-const getChartConfiguration = (chartType, labels, dataValues, xAxis, yAxis) => {
+const getChartConfiguration = (chartType, labels, dataValues, xAxis, yAxis, jsonData) => {
   const baseConfig = {
     data: {
       labels: labels,
@@ -280,14 +280,14 @@ export const analyzeData = async (req, res) => {
     const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
 
     const labels = jsonData.map(item => item[xAxis]);
-    const dataValues = jsonData.map(item => item[yAxis]);
+    const dataValues = jsonData.map(item => item[yAxis] || 0);
 
     const chartData = {};
     let chartUrl = '';
 
     // if (chartType === 'bar') {
       // const configuration = {
-      //   type: 'bar',
+      //   chartType,
       //   data: {
       //     labels: labels,
       //     datasets: [{
@@ -298,6 +298,7 @@ export const analyzeData = async (req, res) => {
       //   },
       // };
       const configuration = getChartConfiguration(chartType, labels, dataValues, xAxis, yAxis,);
+      console.log('Chart Configuration:', configuration);
       const chartJSNodeCanvas = new ChartJSNodeCanvas({ width: 600, height: 400 });
       const imageBuffer = await chartJSNodeCanvas.renderToBuffer(configuration);
       const imageName = `bar_chart_${uploadId}.png`;
