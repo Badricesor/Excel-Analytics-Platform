@@ -15,297 +15,268 @@ const __dirname = dirname(__filename);
 
 
 // Function to generate chart configuration based on chart type
-// Helper function for chart configuration (remains the same)
-const getChartConfiguration = (chartType, labels, dataValues, xAxisLabel, yAxisLabel) => {
-    switch (chartType) {
-        case 'bar':
-        case 'line':
-        default:
-            return {
-                type: chartType,
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: `${yAxisLabel} vs ${xAxisLabel}`,
-                        data: dataValues,
-                        backgroundColor: [
-                            'rgba(255, 99, 132, 0.6)',
-                            'rgba(54, 162, 235, 0.6)',
-                            'rgba(255, 206, 86, 0.6)',
-                            'rgba(75, 192, 192, 0.6)',
-                            'rgba(153, 102, 255, 0.6)',
-                            'rgba(255, 159, 64, 0.6)',
-                            'rgba(255, 0, 0, 0.6)',
-                            'rgba(0, 255, 0, 0.6)',
-                            'rgba(0, 0, 255, 0.6)',
-                            'rgba(192, 192, 192, 0.6)'
-                        ],
-                        borderColor: [
-                            'rgba(255, 99, 132, 1)',
-                            'rgba(54, 162, 235, 1)',
-                            'rgba(255, 206, 86, 1)',
-                            'rgba(75, 192, 192, 1)',
-                            'rgba(153, 102, 255, 1)',
-                            'rgba(255, 159, 64, 1)',
-                            'rgba(255, 0, 0, 1)',
-                            'rgba(0, 255, 0, 1)',
-                            'rgba(0, 0, 255, 1)',
-                            'rgba(192, 192, 192, 1)'
-                        ],
-                        borderWidth: 1,
-                        fill: chartType === 'line' ? false : true,
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: `${yAxisLabel} vs ${xAxisLabel} (${chartType.toUpperCase()} Chart)`,
-                            font: {
-                                size: 16
-                            }
-                        },
-                        legend: {
-                            position: 'bottom'
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            title: {
-                                display: true,
-                                text: yAxisLabel,
-                                font: {
-                                    size: 14
-                                }
-                            }
-                        },
-                        x: {
-                            title: {
-                                display: true,
-                                text: xAxisLabel,
-                                font: {
-                                    size: 14
-                                }
-                            }
-                        }
-                    }
-                }
-            };
+const getChartConfiguration = (chartType, labels, dataValues, xAxis, yAxis, jsonData) => {
+  
+  console.log(`Generating chart of type: ${chartType}`);  // Keep this
+  console.log('Labels:', labels);
+  console.log('Data Values:', dataValues);
+  console.log('jsonData', jsonData);
 
-        case 'pie':
-        case 'doughnut':
-            return {
-                type: chartType,
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: yAxisLabel,
-                        data: dataValues,
-                        backgroundColor: [
-                            'rgba(255, 99, 132, 0.8)',
-                            'rgba(54, 162, 235, 0.8)',
-                            'rgba(255, 206, 86, 0.8)',
-                            'rgba(75, 192, 192, 0.8)',
-                            'rgba(153, 102, 255, 0.8)',
-                            'rgba(255, 159, 64, 0.8)',
-                            'rgba(255, 0, 0, 0.8)',
-                            'rgba(0, 255, 0, 0.8)',
-                            'rgba(0, 0, 255, 0.8)',
-                            'rgba(192, 192, 192, 0.8)'
-                        ],
-                        borderColor: [
-                            'rgba(255, 99, 132, 1)',
-                            'rgba(54, 162, 235, 1)',
-                            'rgba(255, 206, 86, 1)',
-                            'rgba(75, 192, 192, 1)',
-                            'rgba(153, 102, 255, 1)',
-                            'rgba(255, 159, 64, 1)',
-                            'rgba(255, 0, 0, 1)',
-                            'rgba(0, 255, 0, 1)',
-                            'rgba(0, 0, 255, 1)',
-                            'rgba(192, 192, 192, 1)'
-                        ],
-                        borderWidth: 1,
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: `${yAxisLabel} Distribution (${chartType.charAt(0).toUpperCase() + chartType.slice(1)} Chart)`,
-                            font: {
-                                size: 16
-                            }
-                        },
-                        legend: {
-                            position: 'top'
-                        }
-                    }
-                }
-            };
+  const baseConfig = {
+    data: {
+      labels: labels,
+      datasets: [{
+        label: `${yAxis} vs ${xAxis}`,
+        data: dataValues,
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: { // Define scales here
+        x: {
+            type: 'category', // Default to 'category' for x-axis
+            title: {
+                display: true,
+                text: xAxis
+            }
+        },
+        y: {
+            type: 'linear',  // Default to 'linear' for y-axis
+            beginAtZero: true,
+            title: {
+                display: true,
+                text: yAxis
+            }
+        }
+    },
+      // Add more common options here as needed
+    },
+  };
 
-        case 'radar':
+
+   // Add this check at the beginning of the function
+   if (!jsonData || jsonData.length === 0) {
+    return {
+        type: chartType,
+        data: { labels: [], datasets: [] }, // Return empty data
+        options: { responsive: true, maintainAspectRatio: false },
+    };
+}
+
+
+  switch (chartType) {
+    case 'bar':
             return {
-                type: 'radar',
+                ...baseConfig,
+                type: 'bar',
                 data: {
                     labels: labels,
                     datasets: [{
-                        label: `${yAxisLabel} vs ${xAxisLabel}`,
-                        data: dataValues,
-                        backgroundColor: 'rgba(179, 157, 219, 0.2)',
-                        borderColor: 'rgba(179, 157, 219, 1)',
-                        pointBackgroundColor: 'rgba(179, 157, 219, 1)',
-                        pointBorderColor: '#fff',
-                        pointHoverBackgroundColor: '#fff',
-                        pointHoverBorderColor: 'rgba(179, 157, 219, 1)',
-                        fill: true
+                        ...baseConfig.data.datasets[0],
+                        backgroundColor: 'rgba(54, 162, 235, 0.8)',
                     }],
                 },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: `${yAxisLabel} vs ${xAxisLabel} (Radar Chart)`,
-                            font: {
-                                size: 16
-                            }
-                        },
-                        legend: {
-                            position: 'top'
-                        }
-                    },
-                    scales: {
-                        r: {
-                            angleLines: {
-                                display: true
-                            },
-                            suggestedMin: 0,
-                            suggestedMax: dataValues && dataValues.length > 0 ? Math.max(...dataValues) * 1.1 : 10, // Provide a default max
-                        }
-                    }
-                }
-            };
-
-
-        case 'bubble':
-            return {
-                type: 'bubble',
-                data: {
-                    datasets: [{
-                        label: `${yAxisLabel} vs ${xAxisLabel}`,
-                        data: data.map(row => ({
-                            x: row[headers.indexOf(xAxisLabel)],
-                            y: row[headers.indexOf(yAxisLabel)],
-                            r: 10, // You might need a column for radius
-                        })),
-                        backgroundColor: 'rgba(255, 99, 132, 0.6)',
-                        borderColor: 'rgba(255, 99, 132, 1)',
-                        borderWidth: 1,
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: `${yAxisLabel} vs ${xAxisLabel} (Bubble Chart)`,
-                            font: {
-                                size: 16
-                            }
-                        },
-                        legend: {
-                            position: 'bottom'
-                        }
-                    },
+                 options: {
+                    ...baseConfig.options,
                     scales: {
                         x: {
+                            type: 'category',
                             title: {
                                 display: true,
-                                text: xAxisLabel,
-                                font: {
-                                    size: 14
-                                }
-                            }
-                        },
-                        y: {
-                            title: {
-                                display: true,
-                                text: yAxisLabel,
-                                font: {
-                                    size: 14
-                                }
-                            },
-                            beginAtZero: true
-                        }
-                    }
-                }
-            };
-
-
-        case 'scatter':
-            return {
-                type: 'scatter',
-                data: {
-                    datasets: [{
-                        label: `${yAxisLabel} vs ${xAxisLabel}`,
-                        data: data.map(row => ({
-                            x: row[headers.indexOf(xAxisLabel)],
-                            y: row[headers.indexOf(yAxisLabel)],
-                        })),
-                        backgroundColor: 'rgba(54, 162, 235, 0.8)',
-                        borderColor: 'rgba(54, 162, 235, 1)',
-                        borderWidth: 1,
-                        pointRadius: 5,
-                        pointHoverRadius: 8
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: `${yAxisLabel} vs ${xAxisLabel} (Scatter Chart)`,
-                            font: {
-                                size: 16
-                            }
-                        },
-                        legend: {
-                            position: 'bottom'
-                        }
-                    },
-                    scales: {
-                        x: {
-                            type: 'linear',
-                            position: 'bottom',
-                            title: {
-                                display: true,
-                                text: xAxisLabel,
-                                font: {
-                                    size: 14
-                                }
+                                text: xAxis
                             }
                         },
                         y: {
                             type: 'linear',
-                            position: 'left',
-                            title: {
+                            beginAtZero: true,
+                             title: {
                                 display: true,
-                                text: yAxisLabel,
-                                font: {
-                                    size: 14
-                                }
-                            },
-                            beginAtZero: true
+                                text: yAxis
+                            }
                         }
                     }
                 }
             };
-    }
+            case 'line':
+              return {
+                  ...baseConfig,
+                  type: 'line',
+                  data: {
+                      labels: labels,
+                      datasets: [{
+                          ...baseConfig.data.datasets[0],
+                          borderColor: 'rgba(75, 192, 192, 0.8)',
+                          fill: false,
+                      }],
+                  },
+                  options: {
+                      ...baseConfig.options,
+                       scales: {
+                          x: {
+                              type: 'category',
+                               title: {
+                                  display: true,
+                                  text: xAxis
+                              }
+                          },
+                          y: {
+                              type: 'linear',
+                              beginAtZero: true,
+                               title: {
+                                  display: true,
+                                  text: yAxis
+                              }
+                          }
+                      }
+                  }
+              };
+              case 'pie':
+                case 'doughnut':
+                    const pieDoughnutOptions = {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'top'
+                            },
+                        },
+                    };
+                    return {
+                        ...baseConfig,
+                        type: chartType,
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                ...baseConfig.data.datasets[0],
+                                backgroundColor: [
+                                    'rgba(255, 99, 132, 0.8)',
+                                    'rgba(54, 162, 235, 0.8)',
+                                    'rgba(255, 206, 86, 0.8)',
+                                    'rgba(75, 192, 192, 0.8)',
+                                    'rgba(153, 102, 255, 0.8)',
+                                ],
+                            }],
+                        },
+                        options: pieDoughnutOptions, // Use the defined options
+                    };
+    case 'radar':
+      console.log("Radar jsonData:", jsonData);
+      console.log("Radar xAxis:", xAxis, "Radar yAxis:", yAxis);
+        return {
+            ...baseConfig,
+            type: 'radar',
+            data: {
+                // ...baseConfig.data,
+                labels: labels, // Radar uses labels
+                datasets: [{
+                  label: `${yAxis} vs ${xAxis}`,
+                  data: dataValues,  //and dataValues
+                  backgroundColor: 'rgba(153, 102, 255, 0.2)',
+                  borderColor: 'rgba(153, 102, 255, 1)',
+                  pointBackgroundColor: 'rgba(153, 102, 255, 1)',
+                  pointBorderColor: '#fff',
+                  pointHoverBackgroundColor: '#fff',
+                  pointHoverBorderColor: 'rgba(153, 102, 255, 1)',
+              }],
+            },
+            options: {
+                ...baseConfig.options,
+                // специфичные опции для графика radar
+                scales: {
+                    r: {
+                        angleLines: {
+                            display: true
+                        },
+                        suggestedMin: 0,
+                        suggestedMax: Math.max(...dataValues)
+                    }
+                }
+            }
+        };
+    case 'bubble':
+      console.log("Bubble jsonData:", jsonData); 
+      console.log("Bubble xAxis:", xAxis, "Bubble yAxis:", yAxis);
+          return {
+            ...baseConfig,
+            type: 'bubble',
+            data: {
+              datasets: [{
+                label: `${yAxis} vs ${xAxis}`,
+                data: jsonData.map(item => ({
+                  x: item[xAxis],
+                  y: item[yAxis],
+                  r: 10, // You might need a column for radius
+                })),
+                backgroundColor: 'rgba(255, 99, 132, 0.6)',
+                hoverBackgroundColor: 'rgba(255, 99, 132, 0.8)',
+                borderWidth: 0,
+              }],
+            },
+            options: {
+              ...baseConfig.options,
+              scales: {
+                x: { type: 'linear', position: 'bottom' },
+                y: { type: 'linear', position: 'left' },
+              },
+            },
+          };
+    case 'scatter':
+      console.log("Scatter jsonData:", jsonData); 
+      console.log("Scatter xAxis:", xAxis, "Scatter yAxis:", yAxis);
+          return {
+            ...baseConfig,
+            type: 'scatter',
+            data: {
+              datasets: [{
+                label: `${yAxis} vs ${xAxis}`,
+                data: jsonData.map(item => ({
+                  x: item[xAxis],
+                  y: item[yAxis],
+                })),
+                backgroundColor: 'rgba(255, 159, 64, 0.8)',
+                borderColor: 'rgba(255, 159, 64, 1)',
+                borderWidth: 1,
+              }],
+            },
+            options: {
+              ...baseConfig.options,
+              scales: {
+                x: { type: 'linear', position: 'bottom' },
+                y: { type: 'linear', position: 'left' },
+              },
+            },
+          };
+    default:
+      return {
+        ...baseConfig,
+        type: 'bar',
+         options: {
+            ...baseConfig.options,
+             scales: {
+                x: {
+                    type: 'category',
+                     title: {
+                        display: true,
+                        text: xAxis
+                    }
+                },
+                y: {
+                    type: 'linear',
+                    beginAtZero: true,
+                     title: {
+                        display: true,
+                        text: yAxis
+                    }
+                }
+            }
+        }
+    };
+  }
 };
+
+
+
 // Configure multer storage (using the /tmp directory as shown in your screenshot)
 const storage = multer.diskStorage({
   destination: '/tmp',

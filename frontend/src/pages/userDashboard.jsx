@@ -196,7 +196,7 @@ const handleGenerateAllCharts = async () => {
             body: JSON.stringify({ xAxis: xAxisColumn, yAxis: yAxisColumn }),
         });
 
-        if (!res.ok) {
+        if (!response.ok) {
             const errorData = await res.json();
             throw new Error(errorData.message || 'Failed to generate charts');
         }
