@@ -185,8 +185,6 @@ const handleGenerateAllCharts = async () => {
     setAllAnalysisResults([]); // Clear previous results
 
     const token = localStorage.getItem('token');
-
-
       try {
       console.log('GenerateAllCharts function hit!'); // Add this log
         const response = await fetch(`${import.meta.env.VITE_API_URL}/api/version1/upload/uploads/${selectedFileId}/generate-all-charts`, { 
