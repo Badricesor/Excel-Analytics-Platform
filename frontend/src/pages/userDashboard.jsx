@@ -137,7 +137,7 @@ const UserDashboard = () => {
 
     console.log('selectedFileId:', selectedFileId);
     try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/version1/upload/uploads/${selectedFileId}/generate-all-charts`, { // Corrected route
+        const res = await fetch(`<span class="math-inline">\{import\.meta\.env\.VITE\_API\_URL\}/api/version1/upload/uploads/</span>{selectedFileId}/generate-all-charts`, { 
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
