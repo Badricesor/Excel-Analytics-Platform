@@ -478,6 +478,9 @@ export const generateAllCharts = async (req, res) => {
        const labels = data.map(row => row[headers.indexOf(xAxis)]);
     const dataValues = data.map(row => row[headers.indexOf(yAxis)]);
       
+    const width = 600;
+      const height = 400;
+      const chartJSNodeCanvas = new ChartJSNodeCanvas({ width, height });
 
       if (headers && headers.length > 0) {
           labels = jsonData.slice(1).map(row => row[headers.indexOf(xAxis)] || '');
@@ -485,9 +488,7 @@ export const generateAllCharts = async (req, res) => {
       } else {
           return res.status(400).json({ message: 'No headers found in the Excel file.' });
       }
-      const width = 600;
-      const height = 400;
-      const chartJSNodeCanvas = new ChartJSNodeCanvas({ width, height });
+      
 
       for (const chartType of chartTypes) {
           try {
