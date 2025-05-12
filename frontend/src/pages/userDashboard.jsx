@@ -137,6 +137,7 @@ const UserDashboard = () => {
 
     console.log('selectedFileId:', selectedFileId);
     try {
+      console.log('GenerateAllCharts function hit!'); // Add this log
         const res = await fetch(`<span class="math-inline">\{import\.meta\.env\.VITE\_API\_URL\}/api/version1/upload/uploads/</span>{selectedFileId}/generate-all-charts`, { 
             method: 'POST',
             headers: {
@@ -159,7 +160,8 @@ const UserDashboard = () => {
         } else {
             setError("No chart URLs received from the server.");
         }
-
+         res.status(200).send('Generate All Charts endpoint was hit!'); // Send a simple text response
+    console.log('Basic text response sent.'); // Add this log
     } catch (err) {
         console.error("Error generating all charts:", err);
         setError(`Error generating charts: ${err.message}`);
