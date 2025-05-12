@@ -1,6 +1,19 @@
 import User from '../models/userModel.js';
 import Upload from '../models/Upload.js';
 
+
+
+export const getUsers = async (req, res) => {
+  try {
+    const users = await User.find({}); // Fetch all users
+    res.status(200).json(users);
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    res.status(500).json({ message: 'Failed to fetch users', error: error.message });
+  }
+};
+
+
 // @desc    Get user profile
 const getUserProfile = async (req, res) => {
 

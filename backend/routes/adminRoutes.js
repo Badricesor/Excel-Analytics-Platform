@@ -5,6 +5,7 @@ import { getAllUploads, deleteUpload } from '../controllers/userController.js'; 
 
 const router = express.Router();
 
+router.get('/users', protect, admin, getUsers); // Add this line
 router.get('/uploads', protect, admin, getAllUploads);
 router.delete('/uploads/:id', protect, admin, deleteUpload);
 

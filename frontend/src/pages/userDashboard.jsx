@@ -14,23 +14,23 @@ const UserDashboard = () => {
   const [userProfile, setUserProfile] = useState(null);
   const [uploadedData, setUploadedData] = useState(null);
   const [selectedFileId, setSelectedFileId] = useState(null);
-  const [fileUploadMessage, setFileUploadMessage] = useState('');
-  const [fileUploadStatus, setFileUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
   const [analysisResult, setAnalysisResult] = useState(null);
-  const [analysisStatus, setAnalysisStatus] = useState<'idle' | 'processing' | 'success' | 'error'>('idle')
-  const [allAnalysisResults, setAllAnalysisResults] = useState([]);
-  const [errorAnalyzing, setErrorAnalyzing] = useState('');
-  const [errorGeneratingAllCharts, setErrorGeneratingAllCharts] = useState('');
   const [error, setError] = useState('');
-  const [xAxis, setXAxis] = useState('');
-  const [yAxis, setYAxis] = useState('');
-  const [showError, setShowError] = useState(false);
   const [loadingAnalysis, setLoadingAnalysis] = useState(false);
   const [xAxisColumn, setXAxisColumn] = useState('');
   const [yAxisColumn, setYAxisColumn] = useState('');
   const [chartType, setChartType] = useState('scatter');
   const [activeSection, setActiveSection] = useState('Dashboard');
+  const [allAnalysisResults, setAllAnalysisResults] = useState([]);
   const { logout } = useContext(AuthContext);
+  const [uploadSuccess, setUploadSuccess] = useState('');
+  const [uploadError, setUploadError] = useState('');
+  const [uploadId, setUploadId] = useState('');
+  const [fileHeaders, setFileHeaders] = useState([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+   const [token, setToken] = useState('');
+   const [errorLoadingHistory, setErrorLoadingHistory] = useState('');
+  
   const navigate = useNavigate();
 
   const predefinedAnalysisOptions = [
@@ -52,6 +52,7 @@ const UserDashboard = () => {
     { label: 'Doughnut', value: 'doughnut' },
     { label: 'Scatter', value: 'scatter' },
   ];
+  
 
   useEffect(() => {
     fetchUserProfile();
@@ -68,6 +69,7 @@ const UserDashboard = () => {
           },
         });
         setUserProfile(res.data);
+        fetchUploadHistory(token);
       } catch (err) {
         console.error('Error fetching user profile:', err);
         logout();
@@ -79,7 +81,30 @@ const UserDashboard = () => {
     }
   };
 
-  const handleFileUploadSuccess = (data) => {
+    const fetchUploadHistory = async (authToken) => {
+    setLoadingHistory(true);
+    setErrorLoadingHistory('');
+    try {
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/version1/uploads/history`, {
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+      });
+      setUploadHistory(response.data);
+    } catch (error) {
+      setErrorLoadingHistory('Failed to load upload history.');
+      console.error('Error loading upload history:', error);
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
+
+ const handleFileUploadSuccess = (data) => {
+   setUploadSuccess('File uploaded successfully!');
+    setUploadError('');
+    setUploadId(data.uploadId);
+    setFileHeaders(data.headers);
+    fetchUploadHistory(token);
     setUploadedData(data);
     setSelectedFileId(data?.uploadId);
     setAnalysisResult(null);
@@ -92,11 +117,14 @@ const UserDashboard = () => {
     console.log('File Path on Backend:', data?.filePath);
   };
 
-  const handleGenerateAnalysis = async (event) => {
-    event.preventDefault();
+  
 
+  
+
+  const handleGenerateAnalysis = async () => {
+    event.preventDefault();
     if (!selectedFileId) {
-      setError("Please upload an excel file first.");
+      setError("Please upload an excel file to generate insights.");
       return;
     }
     if (!xAxisColumn || !yAxisColumn) {
@@ -120,176 +148,58 @@ const UserDashboard = () => {
       setAnalysisResult(res.data);
     } catch (err) {
       console.error('Error during analysis:', err);
-      setError(err.response?.data?.message || err.message || 'Error generating insights.');
+      setError(err.response?.data?.message ||  err.message ||  'Error generating insights.');
     } finally {
       setLoadingAnalysis(false);
     }
   };
 
-//   const handleGenerateAllCharts = async (event) => {
-//     console.log('selectedFileId in handleGenerateChart:', selectedFileId);
-//     event.preventDefault();
-//     if (!selectedFileId) {
-//         setError("Please upload an excel file first.");
-//         return;
-//     }
-//     if (!xAxisColumn || !yAxisColumn) {
-//         setError("Please select both X and Y axes.");
-//         return;
-//     }
-//     setLoadingAnalysis(true);
-//     setError("");
-//     setAllAnalysisResults([]); // Clear previous results
+  const handleGenerateAllCharts = async (event) => {
+    event.preventDefault();
 
-//     const token = localStorage.getItem('token');
+    if (!selectedFileId) {
+      setError("Please upload an excel file first.");
+      return;
+    }
+    if (!xAxisColumn || !yAxisColumn) {
+      setError("Please select both X and Y axes.");
+      return;
+    }
 
-//     console.log('selectedFileId:', selectedFileId);
-//     try {
-//       console.log('GenerateAllCharts function hit!'); // Add this log
-//         const res = await fetch(`${import.meta.env.VITE_API_URL}/api/version1/upload/uploads/${selectedFileId}/generate-all-charts`, { 
-//             method: 'POST',
-//             headers: {
-//                 'Content-Type': 'application/json',
-//                 'Authorization': `Bearer ${token}`,
-//             },
-//             body: JSON.stringify({ xAxis: xAxisColumn, yAxis: yAxisColumn }),
-//         });
+    setLoadingAnalysis(true);
+    setError('');
+    setAllAnalysisResults([]);
+    const token = localStorage.getItem('token');
+    const results = [];
 
-//         if (!res.ok) {
-//             const errorData = await res.json();
-//             throw new Error(errorData.message || 'Failed to generate charts');
-//         }
+    for (const chartOption of chartTypeOptions) {
+      try {
+        const res = await axios.post(
+          `${import.meta.env.VITE_API_URL}/api/version1/analyze/${selectedFileId}`,
+          { xAxis: xAxisColumn, yAxis: yAxisColumn, chartType: chartOption.value },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        results.push({ chartType: chartOption.value, data: res.data });
+      } catch (err) {
+        console.error(`Error generating ${chartOption.label} chart:`, err);
+        setError(`Error generating ${chartOption.label} chart: ${err.response?.data?.message || err.message}`);
+        // You might want to decide if you want to stop on the first error or continue
+      }
+    }
 
-//         const data = await res.json(); // Get the JSON response
-//         console.log('Response from generate-all-charts:', data); // Log the entire response
+    setAllAnalysisResults(results);
+    setLoadingAnalysis(false);
+  };
 
-//         if (data && data.chartUrls && Array.isArray(data.chartUrls)) {
-//             setAllAnalysisResults(data.chartUrls); // Store the array of URLs
-//         } else {
-//             setError("No chart URLs received from the server.");
-//         }
-//          res.status(200).send('Generate All Charts endpoint was hit!'); // Send a simple text response
-//     console.log('Basic text response sent.'); // Add this log
-//     } catch (err) {
-//         console.error("Error generating all charts:", err);
-//         setError(`Error generating charts: ${err.message}`);
-//     } finally {
-//         setLoadingAnalysis(false);
-//     }
-// };
-
-// const handleGenerateAllCharts = async () => {
-//     setAllAnalysisResults([]);
-//     setErrorGeneratingAllCharts('');
-
-//     if (!xAxisColumn || !yAxisColumn) {
-//       setErrorGeneratingAllCharts('Please select both X and Y axes.');
-//       return;
-//     }
-//     setLoadingAnalysis(true);
-//     setError("");
-//     setAllAnalysisResults([]); // Clear previous results
-
-//     const token = localStorage.getItem('token');
-//       try {
-//       console.log('GenerateAllCharts function hit!'); // Add this log
-//         const response = await fetch(`${import.meta.env.VITE_API_URL}/api/version1/upload/uploads/${selectedFileId}/generate-all-charts`, { 
-//             method: 'POST',
-//             headers: {
-//                 'Content-Type': 'application/json',
-//                 'Authorization': `Bearer ${token}`,
-//             },
-//             body: JSON.stringify({ xAxis: xAxisColumn, yAxis: yAxisColumn }),
-//         });
-
-//         if (!respon.ok) {
-//             const errorData = await res.json();
-//             throw new Error(errorData.message || 'Failed to generate charts');
-//         }
-
-//         const data = await res.json(); // Get the JSON response
-//         console.log('Response from generate-all-charts:', data); // Log the entire response
-
-      
-//         if (data && data.chartUrls && Array.isArray(data.chartUrls)) {
-//             setAllAnalysisResults(data.chartUrls); // Store the array of URLs
-//         } else {
-//             setError("No chart URLs received from the server.");
-//         }
-//       console.log('Response for generate-all-charts:', response.data);
-//     } catch (error) {
-//       setErrorGeneratingAllCharts(`Error generating charts: ${error.message}`);
-//       console.error('Error generating all charts:', error);
-//     }finally {
-//         setLoadingAnalysis(false);
-//     }
-//   };
-
- const handleGenerateAllCharts = async () => {
-        if (!selectedFileId) {
-            setAnalysisMessage('Please upload a file first.');
-            setAnalysisStatus('error');
-            setShowError(true);
-            return;
-        }
-        if (!xAxis || !yAxis) {
-            setAnalysisMessage('Please select X-axis and Y-axis.');
-            setAnalysisStatus('error');
-            setShowError(true);
-            return;
-        }
-
-        setAnalysisStatus('processing');
-        setAnalysisMessage('Generating all charts...');
-        setShowError(false);
-
-
-        try {
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/version1/upload/uploads/${selectedFileId}/generate-all-charts`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ xAxis, yAxis }),
-            });
-
-
-            const data = await response.json();
-            console.log("Full response from backend:", data); // Debugging
-            if (response.ok) {
-                setAnalysisStatus('success');
-                setAnalysisMessage(data.message);
-                if (data.chartUrls && Array.isArray(data.chartUrls)) {
-                    setAllAnalysisResults(data.chartUrls.map((url, index) => ({
-                        chartUrl: url,
-                        chartType: chartTypeOptions[index]?.label || `Chart ${index + 1}`, // Add a label
-                    })));
-                } else {
-                    setAllAnalysisResults([]);
-                    setAnalysisMessage("No charts were generated.");
-                    setAnalysisStatus('error'); // Or maybe success, depending on your needs
-                    setShowError(true);
-                }
-
-            } else {
-                setAnalysisStatus('error');
-                setAnalysisMessage(data.message || 'Failed to generate charts.');
-                setShowError(true);
-            }
-        } catch (error) {
-            console.error("Error in handleGenerateAllCharts:", error);
-            setAnalysisStatus('error');
-            setAnalysisMessage(error.message || 'An error occurred while generating charts.');
-            setShowError(true);
-        }
-    };
-
-
-  const handleDownloadChart = (chartUrl, chartType) => {
-    if (chartUrl) {
+  const handleDownloadChart = () => {
+    if (analysisResult?.chartUrl) {
       const link = document.createElement('a');
-      link.href = chartUrl;
-      link.download = `${chartType}_chart.png`;
+      link.href = analysisResult.chartUrl;
+      link.download = `chart.${analysisResult.chartType || 'png'}`; // Adjust extension as needed
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
