@@ -14,11 +14,17 @@ const UserDashboard = () => {
   const [userProfile, setUserProfile] = useState(null);
   const [uploadedData, setUploadedData] = useState(null);
   const [selectedFileId, setSelectedFileId] = useState(null);
+  const [fileUploadMessage, setFileUploadMessage] = useState('');
+  const [fileUploadStatus, setFileUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
   const [analysisResult, setAnalysisResult] = useState(null);
+  const [analysisStatus, setAnalysisStatus] = useState<'idle' | 'processing' | 'success' | 'error'>('idle')
   const [allAnalysisResults, setAllAnalysisResults] = useState([]);
   const [errorAnalyzing, setErrorAnalyzing] = useState('');
   const [errorGeneratingAllCharts, setErrorGeneratingAllCharts] = useState('');
   const [error, setError] = useState('');
+  const [xAxis, setXAxis] = useState('');
+  const [yAxis, setYAxis] = useState('');
+  const [showError, setShowError] = useState(false);
   const [loadingAnalysis, setLoadingAnalysis] = useState(false);
   const [xAxisColumn, setXAxisColumn] = useState('');
   const [yAxisColumn, setYAxisColumn] = useState('');
