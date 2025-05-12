@@ -4,7 +4,6 @@ Chart.register(LineController,BarController,PieController,DoughnutController,Rad
 import fs from 'fs/promises';
 import multer from 'multer';
 import path from 'path';
-// import os from 'os';
 import XLSX from 'xlsx';
 import { User, Upload } from '../models/index.js';
 import { fileURLToPath } from 'url';
@@ -12,7 +11,6 @@ import { dirname, join } from 'path';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-
 
 // Function to generate chart configuration based on chart type
 const getChartConfiguration = (chartType, labels, dataValues, xAxis, yAxis, jsonData) => {
@@ -274,8 +272,6 @@ const getChartConfiguration = (chartType, labels, dataValues, xAxis, yAxis, json
     };
   }
 };
-
-
 
 // Configure multer storage (using the /tmp directory as shown in your screenshot)
 const storage = multer.diskStorage({

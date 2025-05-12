@@ -172,52 +172,111 @@ const UserDashboard = () => {
 //     }
 // };
 
-const handleGenerateAllCharts = async () => {
-    setAllAnalysisResults([]);
-    setErrorGeneratingAllCharts('');
+// const handleGenerateAllCharts = async () => {
+//     setAllAnalysisResults([]);
+//     setErrorGeneratingAllCharts('');
 
-    if (!xAxisColumn || !yAxisColumn) {
-      setErrorGeneratingAllCharts('Please select both X and Y axes.');
-      return;
-    }
-    setLoadingAnalysis(true);
-    setError("");
-    setAllAnalysisResults([]); // Clear previous results
+//     if (!xAxisColumn || !yAxisColumn) {
+//       setErrorGeneratingAllCharts('Please select both X and Y axes.');
+//       return;
+//     }
+//     setLoadingAnalysis(true);
+//     setError("");
+//     setAllAnalysisResults([]); // Clear previous results
 
-    const token = localStorage.getItem('token');
-      try {
-      console.log('GenerateAllCharts function hit!'); // Add this log
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/version1/upload/uploads/${selectedFileId}/generate-all-charts`, { 
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`,
-            },
-            body: JSON.stringify({ xAxis: xAxisColumn, yAxis: yAxisColumn }),
-        });
+//     const token = localStorage.getItem('token');
+//       try {
+//       console.log('GenerateAllCharts function hit!'); // Add this log
+//         const response = await fetch(`${import.meta.env.VITE_API_URL}/api/version1/upload/uploads/${selectedFileId}/generate-all-charts`, { 
+//             method: 'POST',
+//             headers: {
+//                 'Content-Type': 'application/json',
+//                 'Authorization': `Bearer ${token}`,
+//             },
+//             body: JSON.stringify({ xAxis: xAxisColumn, yAxis: yAxisColumn }),
+//         });
 
-        if (!response.ok) {
-            const errorData = await res.json();
-            throw new Error(errorData.message || 'Failed to generate charts');
-        }
+//         if (!respon.ok) {
+//             const errorData = await res.json();
+//             throw new Error(errorData.message || 'Failed to generate charts');
+//         }
 
-        const data = await res.json(); // Get the JSON response
-        console.log('Response from generate-all-charts:', data); // Log the entire response
+//         const data = await res.json(); // Get the JSON response
+//         console.log('Response from generate-all-charts:', data); // Log the entire response
 
       
-        if (data && data.chartUrls && Array.isArray(data.chartUrls)) {
-            setAllAnalysisResults(data.chartUrls); // Store the array of URLs
-        } else {
-            setError("No chart URLs received from the server.");
+//         if (data && data.chartUrls && Array.isArray(data.chartUrls)) {
+//             setAllAnalysisResults(data.chartUrls); // Store the array of URLs
+//         } else {
+//             setError("No chart URLs received from the server.");
+//         }
+//       console.log('Response for generate-all-charts:', response.data);
+//     } catch (error) {
+//       setErrorGeneratingAllCharts(`Error generating charts: ${error.message}`);
+//       console.error('Error generating all charts:', error);
+//     }finally {
+//         setLoadingAnalysis(false);
+//     }
+//   };
+
+ const handleGenerateAllCharts = async () => {
+        if (!selectedFileId) {
+            setAnalysisMessage('Please upload a file first.');
+            setAnalysisStatus('error');
+            setShowError(true);
+            return;
         }
-      console.log('Response for generate-all-charts:', response.data);
-    } catch (error) {
-      setErrorGeneratingAllCharts(`Error generating charts: ${error.message}`);
-      console.error('Error generating all charts:', error);
-    }finally {
-        setLoadingAnalysis(false);
-    }
-  };
+        if (!xAxis || !yAxis) {
+            setAnalysisMessage('Please select X-axis and Y-axis.');
+            setAnalysisStatus('error');
+            setShowError(true);
+            return;
+        }
+
+        setAnalysisStatus('processing');
+        setAnalysisMessage('Generating all charts...');
+        setShowError(false);
+
+
+        try {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/version1/upload/uploads/${selectedFileId}/generate-all-charts`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ xAxis, yAxis }),
+            });
+
+
+            const data = await response.json();
+            console.log("Full response from backend:", data); // Debugging
+            if (response.ok) {
+                setAnalysisStatus('success');
+                setAnalysisMessage(data.message);
+                if (data.chartUrls && Array.isArray(data.chartUrls)) {
+                    setAllAnalysisResults(data.chartUrls.map((url, index) => ({
+                        chartUrl: url,
+                        chartType: chartTypeOptions[index]?.label || `Chart ${index + 1}`, // Add a label
+                    })));
+                } else {
+                    setAllAnalysisResults([]);
+                    setAnalysisMessage("No charts were generated.");
+                    setAnalysisStatus('error'); // Or maybe success, depending on your needs
+                    setShowError(true);
+                }
+
+            } else {
+                setAnalysisStatus('error');
+                setAnalysisMessage(data.message || 'Failed to generate charts.');
+                setShowError(true);
+            }
+        } catch (error) {
+            console.error("Error in handleGenerateAllCharts:", error);
+            setAnalysisStatus('error');
+            setAnalysisMessage(error.message || 'An error occurred while generating charts.');
+            setShowError(true);
+        }
+    };
 
 
   const handleDownloadChart = (chartUrl, chartType) => {
