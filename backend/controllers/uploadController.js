@@ -403,18 +403,6 @@ export const analyzeData = async (req, res) => {
       return res.status(400).json({ message: 'No data found in the uploaded file.' });
     }
 
-    // const headers = jsonData[0];
-    // console.log('Headers from Excel:', headers);
-
-    // let headers = [];
-    //     if (jsonData && jsonData.length > 0 && Array.isArray(jsonData[0])) {
-    //         headers = jsonData[0];
-    //     }
-    //     console.log('Headers from Excel:', headers);
-
-    // const labels = jsonData.slice(1).map(row => row[headers.indexOf(xAxis)] || '');
-    // const dataValues = jsonData.slice(1).map(row => row[headers.indexOf(yAxis)] || 0);
-
     let labels = [];
         let dataValues = [];
 
@@ -430,28 +418,12 @@ export const analyzeData = async (req, res) => {
     console.log('Extracted Labels:', labels);  //and this
     console.log('Extracted Data Values:', dataValues);//and this
 
-    // const firstRowKeys = Object.keys(jsonData[0]);
-    // if (!firstRowKeys.includes(xAxis) || !firstRowKeys.includes(yAxis)) {
-    //   return res.status(400).json({ message: `Selected xAxis (${xAxis}) or yAxis (${yAxis}) not found in data. Available columns are: ${firstRowKeys.join(', ')}` });
-    // }
-
     // const chartData = {};
     let chartUrl = '';
     const width = 600;
         const height = 400;
         const chartJSNodeCanvas = new ChartJSNodeCanvas({ width, height });
-    // if (chartType === 'bar') {
-      // const configuration = {
-      //   chartType,
-      //   data: {
-      //     labels: labels,
-      //     datasets: [{
-      //       label: `${yAxis} vs ${xAxis}`,
-      //       data: dataValues,
-      //       backgroundColor: 'rgba(54, 162, 235, 0.8)',
-      //     }],
-      //   },
-      // };
+   
       const configuration = getChartConfiguration(chartType, labels, dataValues, xAxis, yAxis,  jsonData);
       console.log('Chart Configuration:', JSON.stringify(configuration, null, 2));
       // const chartJSNodeCanvas = new ChartJSNodeCanvas({ width: 600, height: 400 });
@@ -480,10 +452,14 @@ export const generateAllCharts = async (req, res) => {
   const generatedChartUrls = [];
 
   try {
+    console.log(`Generating all charts for upload ID: ${uploadId}`); 
       const uploadRecord = await Upload.findById(uploadId);
       if (!uploadRecord) {
           return res.status(404).json({ message: 'Upload record not found.' });
       }
+
+      console.log('Extracted labels:', labels);
+    console.log('Extracted data values:', dataValues);
 
       const filePath = uploadRecord.filePath;
       const workbook = XLSX.readFile(filePath);
@@ -498,6 +474,7 @@ export const generateAllCharts = async (req, res) => {
 
       let labels = [];
       let dataValues = [];
+      
 
       if (headers && headers.length > 0) {
           labels = jsonData.slice(1).map(row => row[headers.indexOf(xAxis)] || '');
@@ -505,7 +482,6 @@ export const generateAllCharts = async (req, res) => {
       } else {
           return res.status(400).json({ message: 'No headers found in the Excel file.' });
       }
-
       const width = 600;
       const height = 400;
       const chartJSNodeCanvas = new ChartJSNodeCanvas({ width, height });
@@ -523,9 +499,9 @@ export const generateAllCharts = async (req, res) => {
               // Optionally, you could skip this chart and continue with others
           }
       }
-
+      console.log('Generated chart URLs:', generatedChartUrls);
       res.status(200).json({ message: 'All charts generated successfully.', chartUrls: generatedChartUrls });
-
+      console.log('Response sent successfully.');
   } catch (error) {
       console.error('Error generating all charts:', error);
       res.status(500).json({ message: 'Error generating all charts.', error });
