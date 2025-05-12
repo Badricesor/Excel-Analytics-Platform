@@ -514,7 +514,7 @@ export const generateAllCharts = async (req, res) => {
           const configuration = getChartConfiguration(chartType, labels, dataValues, xAxis, yAxis, jsonData);
           try {
               const imageBuffer = await chartJSNodeCanvas.renderToBuffer(configuration);
-              const imageName = `<span class="math-inline">\{chartType\}\_chart\_</span>{uploadId}.png`;
+              const imageName = `${chartType}_chart_${uploadId}.png`;;
               const imagePath = join(process.cwd(), 'uploads', imageName);
               await fs.writeFile(imagePath, imageBuffer);
               generatedChartUrls.push(`/uploads/${imageName}`);
