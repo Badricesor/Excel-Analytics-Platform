@@ -119,6 +119,7 @@ const UserDashboard = () => {
   };
 
   const handleGenerateAllCharts = async (event) => {
+    console.log('selectedFileId in handleGenerateChart:', selectedFileId);
     event.preventDefault();
     if (!selectedFileId) {
         setError("Please upload an excel file first.");
@@ -134,6 +135,7 @@ const UserDashboard = () => {
 
     const token = localStorage.getItem('token');
 
+    console.log('selectedFileId:', selectedFileId);
     try {
         const res = await fetch(`${import.meta.env.VITE_API_URL}/api/version1/uploads/${selectedFileId}/generate-all-charts`, { // Corrected route
             method: 'POST',
