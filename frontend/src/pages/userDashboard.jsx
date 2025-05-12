@@ -7,7 +7,7 @@ import FileUpload from '../components/FileUpload.jsx'; // Assuming this componen
 import logo from '../../public/logo.png'; 
 // import defaultChartImage from '../assets/barchart.jpg'; // Replace with your sample bar chart image
 // import { cn } from "@/lib/utils" //Utility
-import { ArrowDownTrayIcon } from '@heroicons/react/24/outline';
+import { ArrowDownTrayIcon, UserCircleIcon, CloudArrowUpIcon } from '@heroicons/react/24/outline';
 import AnalysisForm from '../components/AnalysisForm.jsx'
 
 const UserDashboard = () => {
@@ -16,6 +16,8 @@ const UserDashboard = () => {
   const [selectedFileId, setSelectedFileId] = useState(null);
   const [analysisResult, setAnalysisResult] = useState(null);
   const [allAnalysisResults, setAllAnalysisResults] = useState([]);
+  const [errorAnalyzing, setErrorAnalyzing] = useState('');
+  const [errorGeneratingAllCharts, setErrorGeneratingAllCharts] = useState('');
   const [error, setError] = useState('');
   const [loadingAnalysis, setLoadingAnalysis] = useState(false);
   const [xAxisColumn, setXAxisColumn] = useState('');
@@ -178,18 +180,23 @@ const handleGenerateAllCharts = async () => {
       setErrorGeneratingAllCharts('Please select both X and Y axes.');
       return;
     }
+    setLoadingAnalysis(true);
+    setError("");
+    setAllAnalysisResults([]); // Clear previous results
 
-    try {
-      const response = await axios.post(
-        `<span class="math-inline">\{import\.meta\.env\.VITE\_API\_URL\}/api/version1/upload/uploads/</span>{uploadId}/generate-all-charts`,
-        { xAxis: xAxisColumn, yAxis: yAxisColumn },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+    const token = localStorage.getItem('token');
+
+
+      try {
+      console.log('GenerateAllCharts function hit!'); // Add this log
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/version1/upload/uploads/${selectedFileId}/generate-all-charts`, { 
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify({ xAxis: xAxisColumn, yAxis: yAxisColumn }),
+        });
 
       if (response.data && response.data.chartUrls && Array.isArray(response.data.chartUrls)) {
         setAllAnalysisResults(response.data.chartUrls.map((url, index) => ({
@@ -203,6 +210,8 @@ const handleGenerateAllCharts = async () => {
     } catch (error) {
       setErrorGeneratingAllCharts(`Error generating charts: ${error.message}`);
       console.error('Error generating all charts:', error);
+    }finally {
+        setLoadingAnalysis(false);
     }
   };
 
@@ -236,40 +245,58 @@ const handleGenerateAllCharts = async () => {
 
   return (
     <div className="bg-gray-900 dark:bg-gray-900 min-h-screen flex">
-      {/* Left Sidebar */}
-      <div className="bg-gray-800 dark:bg-gray-800 w-64 flex-shrink-0 p-4">
-        <h1 className="text-sm font-bold text-gray-300 mb-4">Excel Analytics Platform</h1>
-        <nav className="space-y-2">
-          <button onClick={() => handleSetActiveSection('Dashboard')} className={`flex items-center space-x-2 py-2 px-4 rounded-md text-gray-400 hover:text-gray-100 hover:bg-gray-700 ${activeSection === 'Dashboard' ? 'bg-gray-700 text-red-500' : ''}`}>
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 01-1-1h-2a1 1 0 00-1 1v4a1 1 0 011 1h2a1 1 0 001-1v-4c0-1.1-.9-2-2-2h-2a1 1 0 011 1v2a1 1 0 001-1z" /></svg>
-            <span>Dashboard</span>
-          </button>
-          <button onClick={() => handleSetActiveSection('History')} className={`flex items-center space-x-2 py-2 px-4 rounded-md text-gray-400 hover:text-gray-100 hover:bg-gray-700 ${activeSection === 'History' ? 'bg-gray-700 text-red-500' : ''}`}>
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
-            <span>History</span>
-          </button>
-          <button onClick={() => handleSetActiveSection('Integration')} className={`flex items-center space-x-2 py-2 px-4 rounded-md text-gray-400 hover:text-gray-100 hover:bg-gray-700 ${activeSection === 'Integration' ? 'bg-gray-700 text-red-500' : ''}`}>
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 20l4-16m4 4l-4 16M21 21l-4-4m4 4l-4 4" /></svg>
-            <span>Integration</span>
-          </button>
-          <button onClick={() => handleSetActiveSection('Profile')} className={`flex items-center space-x-2 py-2 px-4 rounded-md text-gray-400 hover:text-gray-100 hover:bg-gray-700 ${activeSection === 'Profile' ? 'bg-gray-700 text-red-500' : ''}`}>
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-            <span>Profile</span>
-          </button>
-        </nav>
-        <button onClick={logout} className="mt-4 block w-full py-2 px-4 rounded-md text-red-400 hover:text-red-100 hover:bg-gray-700">
+
+     {/* Logout Button (Top Right) */}
+     <div className="absolute top-6 right-6 flex items-center  space-x-2">
+        <UserCircleIcon onClick={() => handleSetActiveSection('Profile')} className="h-9 w-9 mr-5  text-gray-500 cursor-pointer hover:text-gray-500 dark:text-gray-400" /> {/* Profile Icon */}
+        <button
+          onClick={logout}
+          className="bg-red-500 text-gray-300 font-bold py-2 px-3 cursor-pointer rounded hover:bg-red-400 focus:outline-none focus-shadow-outline"
+        >
           Logout
         </button>
       </div>
 
+      {/* Left Sidebar */}
+      <div className="bg-gray-800 dark:bg-gray-800 w-64 flex-shrink-0 p-4">
+      <div className="flex items-center mt-2 mb-9">
+        {logo && <img src={logo} alt="Logo" className="h-12 w-auto mr-2" />}
+        <h2 className="text-sm font-semibold dark:text-white">Excel Analytics Platform</h2>
+      </div>
+
+        <nav className="space-y-2">
+          <button onClick={() => handleSetActiveSection('Dashboard')} className={`flex items-center space-x-2 py-2 px-4 rounded-md text-gray-400 hover:text-gray-100 hover:bg-gray-700 ${activeSection === 'Dashboard' ? 'bg-gray-700 text-red-500' : ''}`}>
+            <svg className="h-5 w-5 cursor-pointer" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 01-1-1h-2a1 1 0 00-1 1v4a1 1 0 011 1h2a1 1 0 001-1v-4c0-1.1-.9-2-2-2h-2a1 1 0 011 1v2a1 1 0 001-1z" /></svg>
+            <span>Dashboard</span>
+          </button>
+          <button onClick={() => handleSetActiveSection('History')} className={`flex items-center space-x-2 py-2 px-4 rounded-md text-gray-400 hover:text-gray-100 hover:bg-gray-700 ${activeSection === 'History' ? 'bg-gray-700 text-red-500' : ''}`}>
+            <svg className="h-5 w-5 cursor-pointer" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
+            <span>History</span>
+          </button>
+          <button onClick={() => handleSetActiveSection('Integration')} className={`flex items-center space-x-2 py-2 px-4 rounded-md text-gray-400 hover:text-gray-100 hover:bg-gray-700 ${activeSection === 'Integration' ? 'bg-gray-700 text-red-500' : ''}`}>
+            <svg className="h-5 w-5 cursor-pointer" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 20l4-16m4 4l-4 16M21 21l-4-4m4 4l-4 4" /></svg>
+            <span>Integration</span>
+          </button>
+          <button onClick={() => handleSetActiveSection('Profile')} className={`flex items-center space-x-2 py-2 px-4 rounded-md text-gray-400 hover:text-gray-100 hover:bg-gray-700 ${activeSection === 'Profile' ? 'bg-gray-700 text-red-500' : ''}`}>
+            <svg className="h-5 w-5 cursor-pointer" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+            <span>Profile</span>
+          </button>
+        </nav>
+        {/* <button onClick={logout} className="mt-4 block w-full py-2 px-4 rounded-md text-red-400 hover:text-red-100 hover:bg-gray-700">
+          Logout
+        </button> */}
+      </div>
+
       {/* Main Content */}
-      <div className="flex-1 p-8">
+      <div className="flex-1 mt-14 p-8">
         {activeSection === 'Dashboard' && (
           <div>
-            <h2 className="text-xl text-gray-400 mb-4">Upload an Excel File</h2>
-            <div className="border-dashed border-2 border-gray-600 rounded-md p-6 flex justify-center items-center">
-              <FileUpload onUploadSuccess={handleFileUploadSuccess} />
+            <h2 className="text-xl text-gray-400 mb-8">Upload an Excel File</h2>
+            <div className="border-dashed border-2 border-gray-600 rounded-md p-14  flex flex-col items-center ">
+              <CloudArrowUpIcon className="h-9 w-9 text-gray-500 mb-1" /> {/* Upload Icon */}
+              <FileUpload  onUploadSuccess={handleFileUploadSuccess} />
             </div>
+            
 
             {uploadedData?.uploadId && (
               <div className="mt-8">
