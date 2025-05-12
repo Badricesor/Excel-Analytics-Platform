@@ -475,6 +475,11 @@ export const generateAllCharts = async (req, res) => {
       const headers = jsonData[0] || [];
     const data = jsonData.slice(1);
 
+    console.log('Headers:', headers);
+    console.log('Data:', data);
+    console.log('xAxis:', xAxis);
+    console.log('yAxis:', yAxis);
+
        const labels = data.map(row => row[headers.indexOf(xAxis)]);
     const dataValues = data.map(row => row[headers.indexOf(yAxis)]);
       
@@ -482,12 +487,12 @@ export const generateAllCharts = async (req, res) => {
       const height = 400;
       const chartJSNodeCanvas = new ChartJSNodeCanvas({ width, height });
 
-      if (headers && headers.length > 0) {
-          labels = jsonData.slice(1).map(row => row[headers.indexOf(xAxis)] || '');
-          dataValues = jsonData.slice(1).map(row => row[headers.indexOf(yAxis)] || 0);
-      } else {
-          return res.status(400).json({ message: 'No headers found in the Excel file.' });
-      }
+      // if (headers && headers.length > 0) {
+      //     labels = jsonData.slice(1).map(row => row[headers.indexOf(xAxis)] || '');
+      //     dataValues = jsonData.slice(1).map(row => row[headers.indexOf(yAxis)] || 0);
+      // } else {
+      //     return res.status(400).json({ message: 'No headers found in the Excel file.' });
+      // }
       
 
       for (const chartType of chartTypes) {
