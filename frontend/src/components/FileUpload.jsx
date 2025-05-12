@@ -35,10 +35,20 @@ const FileUpload = ({ onUploadSuccess }) => {
         },
       });
 
+      if (res.ok) {
+      const data = await res.json();
+      setUploadSuccess('File uploaded successfully!');
+      // setUploadError('');
+      setUploadId(data.uploadId);
+      setFileHeaders(data.headers);
+    } else {
+      setError(errorData.message || 'File upload failed.');
+      console.error('File upload failed on server:', errorData);
+    }
       setUploading(false);
       onUploadSuccess(res.data); // Pass the response data to your chart component
-      setUploadError('');
       setFile(null); // Clear the selected file
+
     } catch (err) {
       setUploading(false);
       console.error('File upload error:', err);
