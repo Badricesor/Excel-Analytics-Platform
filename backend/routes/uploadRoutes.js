@@ -17,6 +17,7 @@ const corsOptions = {
 router.post('/upload', protect, uploadFile);
 
 router.post('/analyze/:uploadId', protect, analyzeData);
-router.post('/:uploadId/generate-all-charts', generateAllCharts);
+// router.post('/:uploadId/generate-all-charts', generateAllCharts);
+router.post('/upload/uploads/:uploadId/generate-all-charts', protect, generateAllCharts);
 
 export default router;

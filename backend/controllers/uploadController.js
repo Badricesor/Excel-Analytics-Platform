@@ -463,17 +463,20 @@ export const generateAllCharts = async (req, res) => {
 
       const filePath = uploadRecord.filePath;
       const workbook = XLSX.readFile(filePath);
-      const sheetName = workbook.SheetNames[0];
-      const sheet = workbook.Sheets[sheetName];
+      // const sheetName = workbook.SheetNames[0];
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
       const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
 
-      let headers = [];
-      if (jsonData && jsonData.length > 0 && Array.isArray(jsonData[0])) {
-          headers = jsonData[0];
-      }
+      // let headers = [];
+      // if (jsonData && jsonData.length > 0 && Array.isArray(jsonData[0])) {
+      //     headers = jsonData[0];
+      // }
 
-      let labels = [];
-      let dataValues = [];
+      const headers = jsonData[0] || [];
+    const data = jsonData.slice(1);
+
+       const labels = data.map(row => row[headers.indexOf(xAxis)]);
+    const dataValues = data.map(row => row[headers.indexOf(yAxis)]);
       
 
       if (headers && headers.length > 0) {
@@ -487,13 +490,15 @@ export const generateAllCharts = async (req, res) => {
       const chartJSNodeCanvas = new ChartJSNodeCanvas({ width, height });
 
       for (const chartType of chartTypes) {
-          const configuration = getChartConfiguration(chartType, labels, dataValues, xAxis, yAxis, jsonData);
           try {
+             const configuration = getChartConfiguration(chartType, labels, dataValues, xAxis, yAxis);
               const imageBuffer = await chartJSNodeCanvas.renderToBuffer(configuration);
               const imageName = `${chartType}_chart_${uploadId}.png`;;
               const imagePath = join(process.cwd(), 'uploads', imageName);
               await fs.writeFile(imagePath, imageBuffer);
-              generatedChartUrls.push(`/uploads/${imageName}`);
+              // generatedChartUrls.push(`/uploads/${imageName}`);
+              const chartUrl = `/uploads/${imageName}`;
+              generatedChartUrls.push(chartUrl);
           } catch (renderError) {
               console.error(`Error rendering ${chartType} chart:`, renderError);
               // Optionally, you could skip this chart and continue with others
