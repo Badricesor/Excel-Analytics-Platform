@@ -196,14 +196,20 @@ const handleGenerateAllCharts = async () => {
             body: JSON.stringify({ xAxis: xAxisColumn, yAxis: yAxisColumn }),
         });
 
-      if (response.data && response.data.chartUrls && Array.isArray(response.data.chartUrls)) {
-        setAllAnalysisResults(response.data.chartUrls.map((url, index) => ({
-          chartUrl: url,
-          chartType: chartTypeOptions[index]?.label || `Chart ${index + 1}`,
-        })));
-      } else {
-        setErrorGeneratingAllCharts('No chart URLs received from the server.');
-      }
+        if (!res.ok) {
+            const errorData = await res.json();
+            throw new Error(errorData.message || 'Failed to generate charts');
+        }
+
+        const data = await res.json(); // Get the JSON response
+        console.log('Response from generate-all-charts:', data); // Log the entire response
+
+      
+        if (data && data.chartUrls && Array.isArray(data.chartUrls)) {
+            setAllAnalysisResults(data.chartUrls); // Store the array of URLs
+        } else {
+            setError("No chart URLs received from the server.");
+        }
       console.log('Response for generate-all-charts:', response.data);
     } catch (error) {
       setErrorGeneratingAllCharts(`Error generating charts: ${error.message}`);

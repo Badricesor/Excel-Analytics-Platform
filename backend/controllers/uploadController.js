@@ -13,9 +13,9 @@ import { dirname, join } from 'path';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const width = 400; // Width of the chart image
-const height = 300; // Height of the chart image
-const chartJSNodeCanvas = new ChartJSNodeCanvas({ width, height });
+// const width = 400; // Width of the chart image
+// const height = 300; // Height of the chart image
+// const chartJSNodeCanvas = new ChartJSNodeCanvas({ width, height });
 
 
 // Function to generate chart configuration based on chart type
@@ -59,14 +59,14 @@ const getChartConfiguration = (chartType, labels, dataValues, xAxis, yAxis, json
   };
 
 
-//    // Add this check at the beginning of the function
-//    if (!jsonData || jsonData.length === 0) {
-//     return {
-//         type: chartType,
-//         data: { labels: [], datasets: [] }, // Return empty data
-//         options: { responsive: true, maintainAspectRatio: false },
-//     };
-// }
+   // Add this check at the beginning of the function
+   if (!jsonData || jsonData.length === 0) {
+    return {
+        type: chartType,
+        data: { labels: [], datasets: [] }, // Return empty data
+        options: { responsive: true, maintainAspectRatio: false },
+    };
+}
 
 
   switch (chartType) {
@@ -458,42 +458,40 @@ export const generateAllCharts = async (req, res) => {
           return res.status(404).json({ message: 'Upload record not found.' });
       }
 
+
+
       console.log('Extracted labels:', labels);
     console.log('Extracted data values:', dataValues);
 
       const filePath = uploadRecord.filePath;
       const workbook = XLSX.readFile(filePath);
-      // const sheetName = workbook.SheetNames[0];
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
 
-      // let headers = [];
-      // if (jsonData && jsonData.length > 0 && Array.isArray(jsonData[0])) {
-      //     headers = jsonData[0];
-      // }
+       let labels = [];
+        let dataValues = [];
 
-      const headers = jsonData[0] || [];
-    const data = jsonData.slice(1);
+        if(headers && headers.length > 0){
+          labels = jsonData.slice(1).map(row => row[headers.indexOf(xAxis)] || '');
+          dataValues = jsonData.slice(1).map(row => row[headers.indexOf(yAxis)] || 0);
+     }
+     else{
+          console.error('Headers are empty')
+          return res.status(400).json({message: 'No headers found in excel file'})
+     }
 
-    console.log('Headers:', headers);
-    console.log('Data:', data);
-    console.log('xAxis:', xAxis);
-    console.log('yAxis:', yAxis);
+    //   const headers = jsonData[0] || [];
+    // const data = jsonData.slice(1);
 
-       const labels = data.map(row => row[headers.indexOf(xAxis)]);
-    const dataValues = data.map(row => row[headers.indexOf(yAxis)]);
+    // console.log('Simplified Labels:', labels);
+    // console.log('Simplified DataValues:', dataValues);
+
+    //    const labels = data.map(row => row[headers.indexOf(xAxis)]);
+    // const dataValues = data.map(row => row[headers.indexOf(yAxis)]);
       
     const width = 600;
       const height = 400;
       const chartJSNodeCanvas = new ChartJSNodeCanvas({ width, height });
-
-      // if (headers && headers.length > 0) {
-      //     labels = jsonData.slice(1).map(row => row[headers.indexOf(xAxis)] || '');
-      //     dataValues = jsonData.slice(1).map(row => row[headers.indexOf(yAxis)] || 0);
-      // } else {
-      //     return res.status(400).json({ message: 'No headers found in the Excel file.' });
-      // }
-      
 
       for (const chartType of chartTypes) {
           try {
@@ -505,6 +503,7 @@ export const generateAllCharts = async (req, res) => {
               // generatedChartUrls.push(`/uploads/${imageName}`);
               const chartUrl = `/uploads/${imageName}`;
               generatedChartUrls.push(chartUrl);
+              res.status(200).json({ message: 'Simplified response', labels, dataValues });
           } catch (renderError) {
               console.error(`Error rendering ${chartType} chart:`, renderError);
               // Optionally, you could skip this chart and continue with others
