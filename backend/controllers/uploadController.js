@@ -454,11 +454,15 @@ export const generateAllCharts = async (req, res) => {
       if (!uploadRecord) {
           return res.status(404).json({ message: 'Upload record not found.' });
       }
+      
+    const filePath = uploadRecord.filePath; // Retrieve the stored file path
+    const workbook = XLSX.readFile(filePath);
+    const sheetName = workbook.SheetNames[0];
+    const sheet = workbook.Sheets[sheetName];
+    const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
 
-      const filePath = uploadRecord.filePath;
-      const workbook = XLSX.readFile(filePath);
-      const sheet = workbook.Sheets[workbook.SheetNames[0]];
-      const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+    console.log('jsonData:', jsonData); // Add this
+    console.log('xAxis:', xAxis, 'yAxis:', yAxis); //and thi
 
       const headersRow = jsonData[0]; // The first row is the header
     const indexOfXAxis = headersRow.indexOf(xAxis);
@@ -497,7 +501,7 @@ export const generateAllCharts = async (req, res) => {
 
       for (const chartType of chartTypes) {
           try {
-             const configuration = getChartConfiguration(chartType, labels, dataValues, xAxis, yAxis);
+             const configuration = getChartConfiguration(chartType, labels, dataValues, xAxis, yAxis, jsonData);
               const imageBuffer = await chartJSNodeCanvas.renderToBuffer(configuration);
               const imageName = `${chartType}_chart_${uploadId}.png`;;
               const imagePath = join(process.cwd(), 'uploads', imageName);
