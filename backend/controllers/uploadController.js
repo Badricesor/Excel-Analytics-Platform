@@ -21,47 +21,47 @@ const getChartConfiguration = (chartType, labels, dataValues, xAxis, yAxis, json
   console.log('Data Values:', dataValues);
   console.log('jsonData', jsonData);
 
-  // const baseConfig = {
-  //   data: {
-  //     labels: labels,
-  //     datasets: [{
-  //       label: `${yAxis} vs ${xAxis}`,
-  //       data: dataValues,
-  //     }],
-  //   },
-  //   options: {
-  //     responsive: true,
-  //     maintainAspectRatio: false,
-  //     scales: { // Define scales here
-  //       x: {
-  //           type: 'category', // Default to 'category' for x-axis
-  //           title: {
-  //               display: true,
-  //               text: xAxis
-  //           }
-  //       },
-  //       y: {
-  //           type: 'linear',  // Default to 'linear' for y-axis
-  //           beginAtZero: true,
-  //           title: {
-  //               display: true,
-  //               text: yAxis
-  //           }
-  //       }
-  //   },
-  //     // Add more common options here as needed
-  //   },
-  // };
+  const baseConfig = {
+    data: {
+      labels: labels,
+      datasets: [{
+        label: `${yAxis} vs ${xAxis}`,
+        data: dataValues,
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: { // Define scales here
+        x: {
+            type: 'category', // Default to 'category' for x-axis
+            title: {
+                display: true,
+                text: xAxis
+            }
+        },
+        y: {
+            type: 'linear',  // Default to 'linear' for y-axis
+            beginAtZero: true,
+            title: {
+                display: true,
+                text: yAxis
+            }
+        }
+    },
+      // Add more common options here as needed
+    },
+  };
 
 
-   // Add this check at the beginning of the function
-//    if (!jsonData || jsonData.length === 0) {
-//     return {
-//         type: chartType,
-//         data: { labels: [], datasets: [] }, // Return empty data
-//         options: { responsive: true, maintainAspectRatio: false },
-//     };
-// }
+  // Add this check at the beginning of the function
+   if (!jsonData || jsonData.length === 0) {
+    return {
+        type: chartType,
+        data: { labels: [], datasets: [] }, // Return empty data
+        options: { responsive: true, maintainAspectRatio: false },
+    };
+}
 
 
   switch (chartType) {
