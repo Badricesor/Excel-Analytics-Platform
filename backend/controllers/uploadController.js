@@ -466,8 +466,8 @@ export const generateAllCharts = async (req, res) => {
         let dataValues = [];
 
         if(req.headers && Object.keys(req.headers).length > 0){
-          labels = jsonData.slice(1).map(row => row[headers.indexOf(xAxis)] || '');
-          dataValues = jsonData.slice(1).map(row => row[headers.indexOf(yAxis)] || 0);
+          labels = jsonData.slice(1).map(row => row[req.headers.indexOf(xAxis)] || '');
+          dataValues = jsonData.slice(1).map(row => row[req.headers.indexOf(yAxis)] || 0);
      }
      else{
           console.error('Headers are empty')
