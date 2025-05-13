@@ -447,7 +447,6 @@ export const generateAllCharts = async (req, res) => {
   const { xAxis, yAxis } = req.body;
   const chartTypes = ['bar', 'line', 'pie', 'doughnut', 'radar', 'bubble', 'scatter'];
   const generatedChartUrls = [];
-  const headers=req.headers
 
   try {
     console.log(`Generating all charts for upload ID: ${uploadId}`); 
@@ -461,19 +460,36 @@ export const generateAllCharts = async (req, res) => {
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
 
-      
+      const headersRow = jsonData[0]; // The first row is the header
+    const indexOfXAxis = headersRow.indexOf(xAxis);
+    const indexOfYAxis = headersRow.indexOf(yAxis);
 
-       let labels = [];
-        let dataValues = [];
+        if (indexOfXAxis === -1 || indexOfYAxis === -1) {
+      return res.status(400).json({ message: 'Selected columns not found in the file.' });
+    }
 
-        if(headers && headers.length > 0){
-          labels = jsonData.slice(1).map(row => row[headers.indexOf(xAxis)] || '');
-          dataValues = jsonData.slice(1).map(row => row[headers.indexOf(yAxis)] || 0);
-     }
-     else{
-          console.error('Headers are empty')
-          return res.status(400).json({message: 'No headers found in excel file'})
-     }
+    const labels = jsonData.slice(1).map(row => row[indexOfXAxis]);
+    const dataValues = jsonData.slice(1).map(row => row[indexOfYAxis]);
+
+    let chartData;
+    const authorizationToken = req.headers.authorization;
+
+      if (!authorizationToken) {
+      console.log('Authorization token is missing.');
+      return res.status(401).json({ message: 'Authorization token is required.' });
+    } else {
+      console.log('Authorization token:', authorizationToken);
+      // You can further verify or use the token here if needed
+    }
+
+    //     if(headers && headers.length > 0){
+    //       labels = jsonData.slice(1).map(row => row[headers.indexOf(xAxis)] || '');
+    //       dataValues = jsonData.slice(1).map(row => row[headers.indexOf(yAxis)] || 0);
+    //  }
+    //  else{
+    //       console.error('Headers are empty')
+    //       return res.status(400).json({message: 'No headers found in excel file'})
+    //  }
       
     const width = 600;
       const height = 400;
