@@ -1,7 +1,7 @@
 import express from 'express';
 import { protect } from '../middleware/authMiddleware.js';
 import { admin } from '../middleware/adminMiddleware.js';
-import { getAllUploads, deleteUpload } from '../controllers/userController.js'; // Note: Using userController for admin uploads
+import { getAllUploads, deleteUpload, getUsers } from '../controllers/userController.js'; // Note: Using userController for admin uploads
 
 const router = express.Router();
 
