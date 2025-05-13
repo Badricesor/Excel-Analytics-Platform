@@ -2,13 +2,46 @@ import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
 import AuthContext from '../context/AuthContext.jsx';
-import FileUpload from '../components/FileUpload.jsx'; // Assuming this component handles file uploads
-// import { ArrowUpTrayIcon, ChartBarIcon, DocumentArrowDownIcon, EyeIcon, UserCircleIcon } from '@heroicons/react/24/outline';
+import FileUpload from '../components/FileUpload.jsx'; 
 import logo from '../../public/logo.png'; 
-// import defaultChartImage from '../assets/barchart.jpg'; // Replace with your sample bar chart image
-// import { cn } from "@/lib/utils" //Utility
-import { ArrowDownTrayIcon, UserCircleIcon, CloudArrowUpIcon } from '@heroicons/react/24/outline';
+import { ArrowDownTrayIcon, UserCircleIcon, CloudArrowUpIcon, TrashIcon } from '@heroicons/react/24/outline';
 import AnalysisForm from '../components/AnalysisForm.jsx'
+
+// import { Bar, Line, Pie, Doughnut, Radar, Bubble, Scatter } from 'react-chartjs-2'; // Import chart components
+// import {
+//   Chart as ChartJS,
+//   CategoryScale,
+//   LinearScale,
+//   BarElement,
+//   LineElement,
+//   PointElement,
+//   ArcElement,
+//   RadialLinearScale,
+//   BubbleController,
+//   BubbleElement,
+//   ScatterController,
+//   PointElement as ScatterPointElement,
+//   Tooltip,
+//   Legend,
+//   Title
+// } from 'chart.js';
+
+// ChartJS.register(
+//   CategoryScale,
+//   LinearScale,
+//   BarElement,
+//   LineElement,
+//   PointElement,
+//   ArcElement,
+//   RadialLinearScale,
+//   BubbleController, // Register the controller (imported above)
+//   BubbleElement,    // Register the element (imported above)
+//   ScatterController,
+//   ScatterPointElement,
+//   Tooltip,
+//   Legend,
+//   Title
+// );
 
 const UserDashboard = () => {
   const [userProfile, setUserProfile] = useState(null);
@@ -30,6 +63,8 @@ const UserDashboard = () => {
   const [loadingHistory, setLoadingHistory] = useState(false);
    const [token, setToken] = useState('');
    const [errorLoadingHistory, setErrorLoadingHistory] = useState('');
+    const [errorGeneratingAllCharts, setErrorGeneratingAllCharts] = useState(''); // <--- Here is where it's usually defined
+
   
   const navigate = useNavigate();
 
@@ -117,10 +152,6 @@ const UserDashboard = () => {
     console.log('File Path on Backend:', data?.filePath);
   };
 
-  
-
-  
-
   const handleGenerateAnalysis = async () => {
     event.preventDefault();
     if (!selectedFileId) {
@@ -154,45 +185,37 @@ const UserDashboard = () => {
     }
   };
 
-  const handleGenerateAllCharts = async (event) => {
-    event.preventDefault();
-
-    if (!selectedFileId) {
-      setError("Please upload an excel file first.");
-      return;
-    }
-    if (!xAxisColumn || !yAxisColumn) {
-      setError("Please select both X and Y axes.");
-      return;
-    }
-
-    setLoadingAnalysis(true);
-    setError('');
+  const handleGenerateAllCharts = async () => {
     setAllAnalysisResults([]);
-    const token = localStorage.getItem('token');
-    const results = [];
+    setErrorGeneratingAllCharts('');
 
-    for (const chartOption of chartTypeOptions) {
-      try {
-        const res = await axios.post(
-          `${import.meta.env.VITE_API_URL}/api/version1/analyze/${selectedFileId}`,
-          { xAxis: xAxisColumn, yAxis: yAxisColumn, chartType: chartOption.value },
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        results.push({ chartType: chartOption.value, data: res.data });
-      } catch (err) {
-        console.error(`Error generating ${chartOption.label} chart:`, err);
-        setError(`Error generating ${chartOption.label} chart: ${err.response?.data?.message || err.message}`);
-        // You might want to decide if you want to stop on the first error or continue
-      }
+    if (!xAxisColumn || !yAxisColumn) {
+      setErrorGeneratingAllCharts('Please select both X and Y axes.');
+      return;
     }
 
-    setAllAnalysisResults(results);
-    setLoadingAnalysis(false);
+    try {
+      const response = await axios.post(
+        `${import.meta.env.VITE_API_URL}/api/version1/upload/uploads/${uploadId}/generate-all-charts-data`, // Updated backend endpoint
+        { xAxis: xAxisColumn, yAxis: yAxisColumn },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.data && Array.isArray(response.data)) {
+        setAllAnalysisResults(response.data); // Assuming the backend now sends an array of chart data objects
+      } else {
+        setErrorGeneratingAllCharts('No chart data received from the server.');
+      }
+      console.log('Response for generate-all-charts-data:', response.data);
+    } catch (error) {
+      setErrorGeneratingAllCharts(`Error generating chart data: ${error.message}`);
+      console.error('Error generating all chart data:', error);
+    }
   };
 
   const handleDownloadChart = () => {
@@ -319,31 +342,38 @@ const UserDashboard = () => {
                   </div>
                 )}
 
-                {allAnalysisResults.length > 0 && (
-                  <div className="mt-8">
-                    <h3 className="text-lg text-gray-400 mb-2">All Generated Charts</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {allAnalysisResults.map((result) => (
-                        <div key={result.chartType} className="bg-gray-800 rounded-md p-4">
-                          <h4 className="text-md text-gray-300 mb-2">{result.chartType} Chart</h4>
-                          {result.data?.chartUrl ? (
-                            <div>
-                              <img src={result.chartUrl} alt={`${result.chartType} Chart`} className="max-w-full" />
-                              <button onClick={() => handleDownloadChart(result.data.chartUrl, result.chartType)} className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 mt-2">
+               {allAnalysisResults.length > 0 && (
+        <div className="mt-4">
+          <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">Generated Charts</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {allAnalysisResults.map((chartData, index) => (
+              <div key={index} className="border rounded p-4 dark:border-gray-700">
+                <h4 className="text-md font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                  {chartData.options?.title?.text || `Chart ${index + 1}`}
+                </h4>
+                {chartData.type === 'bar' && <Bar data={chartData.data} options={chartData.options} />}
+                {chartData.type === 'line' && <Line data={chartData.data} options={chartData.options} />}
+                {chartData.type === 'pie' && <Pie data={chartData.data} options={chartData.options} />}
+                {chartData.type === 'doughnut' && <Doughnut data={chartData.data} options={chartData.options} />}
+                {chartData.type === 'radar' && <Radar data={chartData.data} options={chartData.options} />}
+                {chartData.type === 'bubble' && <Bubble data={chartData.data} options={chartData.options} />}
+                {chartData.type === 'scatter' && <Scatter data={chartData.data} options={chartData.options} />}
+                {/* Add download functionality if needed (e.g., using toBase64Image) */}
+                 <button onClick={() => handleDownloadChart(result.data.chartUrl, result.chartType)} className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 mt-2">
                                 <ArrowDownTrayIcon className="h-5 w-5 inline-block mr-2" /> Download
                               </button>
-                              {/* Add View option if needed */}
-                            </div>
-                          ) : (
-                            <p className="text-red-500">Error generating this chart.</p>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
               </div>
             )}
+
+            {/* <button onClick={() => handleDownloadChart(result.data.chartUrl, result.chartType)} className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 mt-2">
+                                <ArrowDownTrayIcon className="h-5 w-5 inline-block mr-2" /> Download
+                              </button> */}
 
             {!uploadedData?.uploadId && (
               <p className="mt-8 text-gray-500">Please upload an Excel file to generate insights.</p>
