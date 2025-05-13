@@ -54,14 +54,14 @@ const getChartConfiguration = (chartType, labels, dataValues, xAxis, yAxis, json
   };
 
 
-  // Add this check at the beginning of the function
-   if (!jsonData || jsonData.length === 0) {
-    return {
-        type: chartType,
-        data: { labels: [], datasets: [] }, // Return empty data
-        options: { responsive: true, maintainAspectRatio: false },
-    };
-}
+//   // Add this check at the beginning of the function
+//    if (!jsonData || jsonData.length === 0) {
+//     return {
+//         type: chartType,
+//         data: { labels: [], datasets: [] }, // Return empty data
+//         options: { responsive: true, maintainAspectRatio: false },
+//     };
+// }
 
 
   switch (chartType) {
@@ -513,7 +513,7 @@ export const generateAllCharts = async (req, res) => {
       }
       console.log('Generated chart URLs:', generatedChartUrls);
       res.status(200).json({ message: 'All charts generated successfully.', chartUrls: generatedChartUrls });
-      console.log('Response sent successfully.');
+      console.log("final hit")
   } catch (error) {
       console.error('Error generating all charts:', error);
       res.status(500).json({ message: 'Error generating all charts.', error });
