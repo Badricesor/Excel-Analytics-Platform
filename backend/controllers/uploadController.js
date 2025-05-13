@@ -498,23 +498,23 @@ export const generateAllCharts = async (req, res) => {
     console.log('Extracted Labels:', labels);  //and this
     console.log('Extracted Data Values:', dataValues);//and this
 
-        if (indexOfXAxis === -1 || indexOfYAxis === -1) {
-      return res.status(400).json({ message: 'Selected columns not found in the file.' });
-    }
+    //     if (indexOfXAxis === -1 || indexOfYAxis === -1) {
+    //   return res.status(400).json({ message: 'Selected columns not found in the file.' });
+    // }
 
     // const labels = jsonData.slice(1).map(row => row[indexOfXAxis]);
     // const dataValues = jsonData.slice(1).map(row => row[indexOfYAxis]);
 
-    let chartData;
-    const authorizationToken = req.headers.authorization;
+    // let chartData;
+    // const authorizationToken = req.headers.authorization;
 
-      if (!authorizationToken) {
-      console.log('Authorization token is missing.');
-      return res.status(401).json({ message: 'Authorization token is required.' });
-    } else {
-      console.log('Authorization token:', authorizationToken);
-      // You can further verify or use the token here if needed
-    }
+    //   if (!authorizationToken) {
+    //   console.log('Authorization token is missing.');
+    //   return res.status(401).json({ message: 'Authorization token is required.' });
+    // } else {
+    //   console.log('Authorization token:', authorizationToken);
+    //   // You can further verify or use the token here if needed
+    // }
 
     //     if(headers && headers.length > 0){
     //       labels = jsonData.slice(1).map(row => row[headers.indexOf(xAxis)] || '');
