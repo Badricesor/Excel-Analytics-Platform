@@ -465,7 +465,7 @@ export const generateAllCharts = async (req, res) => {
        let labels = [];
         let dataValues = [];
 
-        if(headers && headers.length > 0){
+        if(req.headers && Object.keys(req.headers).length > 0){
           labels = jsonData.slice(1).map(row => row[headers.indexOf(xAxis)] || '');
           dataValues = jsonData.slice(1).map(row => row[headers.indexOf(yAxis)] || 0);
      }
