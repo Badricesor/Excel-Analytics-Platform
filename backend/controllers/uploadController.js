@@ -464,16 +464,46 @@ export const generateAllCharts = async (req, res) => {
     console.log('jsonData:', jsonData); // Add this
     console.log('xAxis:', xAxis, 'yAxis:', yAxis); //and thi
 
-      const headersRow = jsonData[0]; // The first row is the header
-    const indexOfXAxis = headersRow.indexOf(xAxis);
-    const indexOfYAxis = headersRow.indexOf(yAxis);
+    //   const headersRow = jsonData[0]; // The first row is the header
+    // const indexOfXAxis = headersRow.indexOf(xAxis);
+    // const indexOfYAxis = headersRow.indexOf(yAxis);
+     let headers = [];
+    if (sheet && sheet['!ref']) {  // Ensure sheet and ref exist
+        const range = XLSX.utils.decode_range(sheet['!ref']);
+        if (range.s.r === 0) { // Check if the first row is the header row
+            headers = [];
+            for (let c = range.s.c; c <= range.e.c; ++c) {
+                const cell = sheet[XLSX.utils.encode_cell({ r: 0, c: c })];
+                if (cell && cell.v) {
+                    headers.push(cell.v);  // Get the cell value as header
+                } else {
+                   headers.push(`Column${c}`); //make up a name
+                }
+            }
+        }
+    }
+    console.log('Headers from Excel:', headers);
+    let labels = [];
+        let dataValues = [];
+
+        if(headers && headers.length > 0){
+          labels = jsonData.slice(1).map(row => row[headers.indexOf(xAxis)] || '');
+          dataValues = jsonData.slice(1).map(row => row[headers.indexOf(yAxis)] || 0);
+     }
+     else{
+          console.error('Headers are empty')
+          return res.status(400).json({message: 'No headers found in excel file'})
+     }
+
+    console.log('Extracted Labels:', labels);  //and this
+    console.log('Extracted Data Values:', dataValues);//and this
 
         if (indexOfXAxis === -1 || indexOfYAxis === -1) {
       return res.status(400).json({ message: 'Selected columns not found in the file.' });
     }
 
-    const labels = jsonData.slice(1).map(row => row[indexOfXAxis]);
-    const dataValues = jsonData.slice(1).map(row => row[indexOfYAxis]);
+    // const labels = jsonData.slice(1).map(row => row[indexOfXAxis]);
+    // const dataValues = jsonData.slice(1).map(row => row[indexOfYAxis]);
 
     let chartData;
     const authorizationToken = req.headers.authorization;
