@@ -116,11 +116,11 @@ const UserDashboard = () => {
     }
   };
 
-    const fetchUploadHistory = async (authToken) => {
+    async function fetchUploadHistory(authToken) {
     setLoadingHistory(true);
     setErrorLoadingHistory('');
     try {
-      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/version1/uploads/history`, {
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/version1/upload/uploads/history`, {
         headers: {
           Authorization: `Bearer ${authToken}`,
         },
@@ -132,7 +132,7 @@ const UserDashboard = () => {
     } finally {
       setLoadingHistory(false);
     }
-  };
+  }
 
  const handleFileUploadSuccess = (data) => {
    setUploadSuccess('File uploaded successfully!');
@@ -186,6 +186,8 @@ const UserDashboard = () => {
   };
 
   const handleGenerateAllCharts = async () => {
+    console.log('selectedFileId in handleGenerateChart:', selectedFileId);
+    event.preventDefault()
     setAllAnalysisResults([]);
     setErrorGeneratingAllCharts('');
 
@@ -193,18 +195,30 @@ const UserDashboard = () => {
       setErrorGeneratingAllCharts('Please select both X and Y axes.');
       return;
     }
+    setLoadingAnalysis(true);
+
+    const token = localStorage.getItem('token');
+
+    console.log('uploadId:', uploadId);
 
     try {
-      const response = await axios.post(
-        `${import.meta.env.VITE_API_URL}/api/version1/upload/uploads/${uploadId}/generate-all-charts-data`, // Updated backend endpoint
-        { xAxis: xAxisColumn, yAxis: yAxisColumn },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
+      console.log('GenerateAllCharts function hit!'); // Add this log
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/version1/uploads/${uploadId}/generate-all-charts`, { 
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify({ xAxis: xAxisColumn, yAxis: yAxisColumn }),
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Failed to generate charts');
         }
-      );
+
+        const data = await response.json(); // Get the JSON response
+        console.log('Response from generate-all-charts:', data); // Log the entire response
 
       if (response.data && Array.isArray(response.data)) {
         setAllAnalysisResults(response.data); // Assuming the backend now sends an array of chart data objects
@@ -212,9 +226,12 @@ const UserDashboard = () => {
         setErrorGeneratingAllCharts('No chart data received from the server.');
       }
       console.log('Response for generate-all-charts-data:', response.data);
+      res.status(200).send('Generate All Charts endpoint was hit!');
     } catch (error) {
       setErrorGeneratingAllCharts(`Error generating chart data: ${error.message}`);
       console.error('Error generating all chart data:', error);
+    }finally {
+        setLoadingAnalysis(false);
     }
   };
 
