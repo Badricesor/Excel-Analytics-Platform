@@ -447,6 +447,7 @@ export const generateAllCharts = async (req, res) => {
   const { xAxis, yAxis } = req.body;
   const chartTypes = ['bar', 'line', 'pie', 'doughnut', 'radar', 'bubble', 'scatter'];
   const generatedChartUrls = [];
+  const headers=req.headers
 
   try {
     console.log(`Generating all charts for upload ID: ${uploadId}`); 
@@ -465,9 +466,9 @@ export const generateAllCharts = async (req, res) => {
        let labels = [];
         let dataValues = [];
 
-        if(req.headers && Object.keys(req.headers).length > 0){
-          labels = jsonData.slice(1).map(row => row[req.headers.indexOf(xAxis)] || '');
-          dataValues = jsonData.slice(1).map(row => row[req.headers.indexOf(yAxis)] || 0);
+        if(headers && headers.length > 0){
+          labels = jsonData.slice(1).map(row => row[headers.indexOf(xAxis)] || '');
+          dataValues = jsonData.slice(1).map(row => row[headers.indexOf(yAxis)] || 0);
      }
      else{
           console.error('Headers are empty')
