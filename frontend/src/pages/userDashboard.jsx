@@ -226,7 +226,7 @@ const UserDashboard = () => {
         setErrorGeneratingAllCharts('No chart data received from the server.');
       }
       console.log('Response for generate-all-charts-data:', response.data);
-      res.status(200).send('Generate All Charts endpoint was hit!');
+      
     } catch (error) {
       setErrorGeneratingAllCharts(`Error generating chart data: ${error.message}`);
       console.error('Error generating all chart data:', error);

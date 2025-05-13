@@ -539,7 +539,7 @@ export const generateAllCharts = async (req, res) => {
               // generatedChartUrls.push(`/uploads/${imageName}`);
               const chartUrl = `/uploads/${imageName}`;
               generatedChartUrls.push(chartUrl);
-              res.status(200).json({ message: 'Simplified response', labels, dataValues });
+              
           } catch (renderError) {
               console.error(`Error rendering ${chartType} chart:`, renderError);
               // Optionally, you could skip this chart and continue with others
