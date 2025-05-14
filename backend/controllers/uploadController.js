@@ -8,7 +8,7 @@ import path from 'path';
 import XLSX from 'xlsx';
 import { User, Upload } from '../models/index.js';
 import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+import { dirname , join } from 'path';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -415,7 +415,8 @@ export const analyzeData = async (req, res) => {
       // const chartJSNodeCanvas = new ChartJSNodeCanvas({ width: 600, height: 400 });
       const imageBuffer = await chartJSNodeCanvas.renderToBuffer(configuration);
       const imageName = `${chartType}_chart_${uploadId}.png`;
-      const imagePath = join(process.cwd(), 'uploads', imageName);
+      // const imagePath = join(process.cwd(), 'uploads', imageName);
+      const imagePath = join(__dirname, '..', 'uploads', imageName);
       await fs.writeFile(imagePath, imageBuffer);
       chartUrl = `/uploads/${imageName}`; // Serve this static URL
     // }
@@ -523,7 +524,7 @@ export const generateAllCharts = async (req, res) => {
              const configuration = getChartConfiguration(chartType, labels, dataValues, xAxis, yAxis, jsonData);
               const imageBuffer = await chartJSNodeCanvas.renderToBuffer(configuration);
               const imageName = `${chartType}_chart_${uploadId}.png`;;
-              const imagePath = join(process.cwd(), 'uploads', imageName);
+              const imagePath = join(__dirname, '..', 'uploads', imageName);
               await fs.writeFile(imagePath, imageBuffer);
               // generatedChartUrls.push(`/uploads/${imageName}`);
               const chartUrl = `/uploads/${imageName}`;

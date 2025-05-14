@@ -354,7 +354,7 @@ const UserDashboard = () => {
                 <div className="mt-4 space-x-2">
                   <button
                     onClick={handleGenerateAnalysis}
-                    className="inline-flex items-center px-4 py-2 border  text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-gray-500 disabled:cursor-not-allowed"
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-gray-500 disabled:cursor-not-allowed"
                     disabled={loadingAnalysis || !xAxisColumn || !yAxisColumn}
                   >
                     {loadingAnalysis ? 'Generating...' : 'Generate Chart'}
@@ -362,7 +362,7 @@ const UserDashboard = () => {
 
                   <button
                     onClick={handleGenerateAllCharts}
-                    className="inline-flex items-center px-4 py-2 border text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:bg-gray-500 disabled:cursor-not-allowed"
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:bg-gray-500 disabled:cursor-not-allowed"
                     disabled={loadingAnalysis || !xAxisColumn || !yAxisColumn}
                   >
                     {loadingAnalysis ? 'Generating All...' : 'Generate All Charts'}
@@ -391,13 +391,16 @@ const UserDashboard = () => {
                     <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">Generated Charts</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {allAnalysisResults.map((url, index) => (
-                        <div key={index} className="">
+                        <div key={index} className="border rounded p-4 dark:border-gray-700">
                           <img
                             src={`${import.meta.env.VITE_API_URL}/uploads/${url.split('/').pop()}`}
                             alt={`Generated Chart ${index + 1}`}
                             className="w-full h-auto"
                             onError={() => console.error('Error loading image:', `${import.meta.env.VITE_API_URL}/uploads/${url.split('/').pop()}`)}
                           />
+                          <button onClick={() => handleDownloadChart(analysisResult.chartUrl, chartType)} className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 mt-2">
+                      <ArrowDownTrayIcon className="h-5 w-5 inline-block mr-2" /> Download
+                    </button>
                           {/* <li key={index} className="text-gray-400">{url}</li> */}
                         </div>
                       ))}

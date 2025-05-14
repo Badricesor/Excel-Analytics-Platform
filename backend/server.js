@@ -12,6 +12,7 @@ import path from 'path';
 console.log("current env: ",process.env.NODE_ENV);
 
 const app= express()
+const __dirname = path.resolve(); // Define __dirname if not available
 
 // Configure CORS to allow requests from your frontend's origin
 const corsOptions = {
