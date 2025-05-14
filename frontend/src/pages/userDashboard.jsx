@@ -189,10 +189,11 @@ const UserDashboard = () => {
     console.log('selectedFileId in handleGenerateChart:', selectedFileId);
     event.preventDefault()
     setAllAnalysisResults([]);
+    setGeneratingAllCharts(true);
     setErrorGeneratingAllCharts('');
-    setChartUrls([]); // Clear previous URLs
+    // setChartUrls([]); // Clear previous URLs
 
-    if (!xAxisColumn || !yAxisColumn) {
+    if (!xAxisColumn || !yAxisColumn || !uploadId) {
       setErrorGeneratingAllCharts('Please select both X and Y axes.');
       return;
     }
@@ -222,8 +223,8 @@ const UserDashboard = () => {
         const data = await response.json(); // Get the JSON response
         console.log('Response from generate-all-charts:', data); // Log the entire response
         setChartUrls(data.chartUrls || []);
-        setAllAnalysisResults(data.generatedChartUrls || []);
-
+         setAllAnalysisResults([...data.chartUrls] || []);
+        setGeneratingAllCharts(false);
       if (response.data && Array.isArray(response.data)) {
         setAllAnalysisResults(response.data); // Assuming the backend now sends an array of chart data objects
       } else {
@@ -234,6 +235,7 @@ const UserDashboard = () => {
     } catch (error) {
       setErrorGeneratingAllCharts(`Error generating chart data: ${error.message}`);
       console.error('Error generating all chart data:', error);
+      setGeneratingAllCharts(false);
     }finally {
         setLoadingAnalysis(false);
     }
@@ -347,6 +349,7 @@ const UserDashboard = () => {
                   >
                     {loadingAnalysis ? 'Generating...' : 'Generate Chart'}
                   </button>
+                  
                   <button
                     onClick={handleGenerateAllCharts}
                     className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:bg-gray-500 disabled:cursor-not-allowed"
