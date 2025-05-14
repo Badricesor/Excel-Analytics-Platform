@@ -65,6 +65,7 @@ const UserDashboard = () => {
    const [errorLoadingHistory, setErrorLoadingHistory] = useState('');
     const [errorGeneratingAllCharts, setErrorGeneratingAllCharts] = useState(''); // <--- Here is where it's usually defined
   const [chartUrls, setChartUrls] = useState([]); 
+    const [forceRender, setForceRender] = useState(0); // Add a dummy state
   
   const navigate = useNavigate();
 
@@ -189,11 +190,10 @@ const UserDashboard = () => {
     console.log('selectedFileId in handleGenerateChart:', selectedFileId);
     event.preventDefault()
     setAllAnalysisResults([]);
-    setGeneratingAllCharts(true);
     setErrorGeneratingAllCharts('');
     // setChartUrls([]); // Clear previous URLs
 
-    if (!xAxisColumn || !yAxisColumn || !uploadId) {
+    if (!xAxisColumn || !yAxisColumn) {
       setErrorGeneratingAllCharts('Please select both X and Y axes.');
       return;
     }
@@ -223,8 +223,9 @@ const UserDashboard = () => {
         const data = await response.json(); // Get the JSON response
         console.log('Response from generate-all-charts:', data); // Log the entire response
         setChartUrls(data.chartUrls || []);
-         setAllAnalysisResults([...data.chartUrls] || []);
-        setGeneratingAllCharts(false);
+        // setAllAnalysisResults(data.generatedChartUrls || []);
+        setAllAnalysisResults([...data.chartUrls || []]);
+
       if (response.data && Array.isArray(response.data)) {
         setAllAnalysisResults(response.data); // Assuming the backend now sends an array of chart data objects
       } else {
@@ -235,7 +236,6 @@ const UserDashboard = () => {
     } catch (error) {
       setErrorGeneratingAllCharts(`Error generating chart data: ${error.message}`);
       console.error('Error generating all chart data:', error);
-      setGeneratingAllCharts(false);
     }finally {
         setLoadingAnalysis(false);
     }
@@ -271,13 +271,21 @@ const UserDashboard = () => {
 
    useEffect(() => {
     console.log('allAnalysisResults state in useEffect:', allAnalysisResults);
+     if (allAnalysisResults.length > 0) {
+      setForceRender(prev => prev + 1); // Force re-render when results are available
+    }
   }, [allAnalysisResults]);
 
-  return (
-    <div className="bg-gray-900 dark:bg-gray-900 min-h-screen flex">
+  useEffect(() => {
+  if (uploadId) {
+    handleGenerateAllCharts();
+  }
+}, [uploadId]); // Call handleGenerateAllCharts when uploadId changes
 
-     {/* Logout Button (Top Right) */}
-     <div className="absolute top-6 right-6 flex items-center  space-x-2">
+ return (
+    <div className="bg-gray-900 dark:bg-gray-900 min-h-screen flex">
+      {/* Logout Button (Top Right) */}
+      <div className="absolute top-6 right-6 flex items-center  space-x-2">
         <UserCircleIcon onClick={() => handleSetActiveSection('Profile')} className="h-9 w-9 mr-5  text-gray-500 cursor-pointer hover:text-gray-500 dark:text-gray-400" /> {/* Profile Icon */}
         <button
           onClick={logout}
@@ -289,10 +297,10 @@ const UserDashboard = () => {
 
       {/* Left Sidebar */}
       <div className="bg-gray-800 dark:bg-gray-800 w-64 flex-shrink-0 p-4">
-      <div className="flex items-center mt-2 mb-9">
-        {logo && <img src={logo} alt="Logo" className="h-12 w-auto mr-2" />}
-        <h2 className="text-sm font-semibold dark:text-white">Excel Analytics Platform</h2>
-      </div>
+        <div className="flex items-center mt-2 mb-9">
+          {logo && <img src={logo} alt="Logo" className="h-12 w-auto mr-2" />}
+          <h2 className="text-sm font-semibold dark:text-white">Excel Analytics Platform</h2>
+        </div>
 
         <nav className="space-y-2">
           <button onClick={() => handleSetActiveSection('Dashboard')} className={`flex items-center space-x-2 py-2 px-4 rounded-md text-gray-400 hover:text-gray-100 hover:bg-gray-700 ${activeSection === 'Dashboard' ? 'bg-gray-700 text-red-500' : ''}`}>
@@ -326,7 +334,7 @@ const UserDashboard = () => {
               <CloudArrowUpIcon className="h-9 w-9 text-gray-500 mb-1" /> {/* Upload Icon */}
               <FileUpload  onUploadSuccess={handleFileUploadSuccess} />
             </div>
-            
+
 
             {uploadedData?.uploadId && (
               <div className="mt-8">
@@ -349,7 +357,7 @@ const UserDashboard = () => {
                   >
                     {loadingAnalysis ? 'Generating...' : 'Generate Chart'}
                   </button>
-                  
+
                   <button
                     onClick={handleGenerateAllCharts}
                     className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:bg-gray-500 disabled:cursor-not-allowed"
@@ -365,59 +373,32 @@ const UserDashboard = () => {
                     <h3 className="text-lg text-gray-400 mb-2">Generated {chartType} Chart</h3>
                     {/* <img src={analysisResult.chartUrl} alt={`${chartType} Chart`} className="max-w-full" /> */}
                     {/* <img src={chartUrl} alt={`Generated Chart ${index + 1}`} className="max-w-full" /> */}
-                
+
                     <button onClick={() => handleDownloadChart(analysisResult.chartUrl, chartType)} className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 mt-2">
                       <ArrowDownTrayIcon className="h-5 w-5 inline-block mr-2" /> Download
                     </button>
                   </div>
                 )}
 
-               {allAnalysisResults.length > 0 && (
-        <div className="mt-4">
-          <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">Generated Charts</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {allAnalysisResults.map((url, index) => (
-              <div key={index} className="border rounded p-4 dark:border-gray-700">
-                <h4 className="text-md font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                   {/* <div key={index} className="border rounded-md p-4"> */}
-              <img
-                src={url}
-                alt={`Generated Chart ${index + 1}`}
-                className="w-full h-auto"
-              />
-            {/* </div> */}
-                  {chartData.options?.title?.text || `Chart ${index + 1}`}
-                </h4>
-                {chartData.type === 'bar' && <Bar data={chartData.data} options={chartData.options} />}
-                {chartData.type === 'line' && <Line data={chartData.data} options={chartData.options} />}
-                {chartData.type === 'pie' && <Pie data={chartData.data} options={chartData.options} />}
-                {chartData.type === 'doughnut' && <Doughnut data={chartData.data} options={chartData.options} />}
-                {chartData.type === 'radar' && <Radar data={chartData.data} options={chartData.options} />}
-                {chartData.type === 'bubble' && <Bubble data={chartData.data} options={chartData.options} />}
-                {chartData.type === 'scatter' && <Scatter data={chartData.data} options={chartData.options} />}
-                {/* Add download functionality if needed (e.g., using toBase64Image) */}
-
-                {/* {chartUrls.map((url, index) => (
-            <div  className="border rounded-md p-4">
-              <img key={index} src={url} alt={`Chart ${index + 1}`} className="w-full h-auto" />
-            </div>
-          ))} */}
-
-                 <button onClick={() => handleDownloadChart(result.data.chartUrl, result.chartType)} className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 mt-2">
-                                <ArrowDownTrayIcon className="h-5 w-5 inline-block mr-2" /> Download
-                              </button>
-
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+                {allAnalysisResults.length > 0 && (
+                  <div className="mt-4">
+                    <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">Generated Charts</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {allAnalysisResults.map((url, index) => (
+                        <div key={index} className="border rounded p-4 dark:border-gray-700">
+                          <img
+                            src={url}
+                            alt={`Generated Chart ${index + 1}`}
+                            className="w-full h-auto"
+                          />
+                          <li key={index} className="text-gray-400">{url}</li>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
-
-            {/* <button onClick={() => handleDownloadChart(result.data.chartUrl, result.chartType)} className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 mt-2">
-                                <ArrowDownTrayIcon className="h-5 w-5 inline-block mr-2" /> Download
-                              </button> */}
 
             {!uploadedData?.uploadId && (
               <p className="mt-8 text-gray-500">Please upload an Excel file to generate insights.</p>
