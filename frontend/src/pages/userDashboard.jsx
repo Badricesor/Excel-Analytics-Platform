@@ -64,7 +64,7 @@ const UserDashboard = () => {
    const [token, setToken] = useState('');
    const [errorLoadingHistory, setErrorLoadingHistory] = useState('');
     const [errorGeneratingAllCharts, setErrorGeneratingAllCharts] = useState(''); // <--- Here is where it's usually defined
-
+  const [chartUrls, setChartUrls] = useState([]); 
   
   const navigate = useNavigate();
 
@@ -190,6 +190,7 @@ const UserDashboard = () => {
     event.preventDefault()
     setAllAnalysisResults([]);
     setErrorGeneratingAllCharts('');
+    setChartUrls([]); // Clear previous URLs
 
     if (!xAxisColumn || !yAxisColumn) {
       setErrorGeneratingAllCharts('Please select both X and Y axes.');
@@ -210,6 +211,7 @@ const UserDashboard = () => {
                 'Authorization': `Bearer ${token}`,
             },
             body: JSON.stringify({ xAxis: xAxisColumn, yAxis: yAxisColumn }),
+            
         });
 
         if (!response.ok) {
@@ -219,13 +221,15 @@ const UserDashboard = () => {
 
         const data = await response.json(); // Get the JSON response
         console.log('Response from generate-all-charts:', data); // Log the entire response
+        setChartUrls(data.chartUrls || []);
+        setAllAnalysisResults(data.generatedChartUrls || []);
 
       if (response.data && Array.isArray(response.data)) {
         setAllAnalysisResults(response.data); // Assuming the backend now sends an array of chart data objects
       } else {
         setErrorGeneratingAllCharts('No chart data received from the server.');
       }
-      console.log('Response for generate-all-charts-data:', response.data);
+      // console.log('Response for generate-all-charts-data:', response.data);
       
     } catch (error) {
       setErrorGeneratingAllCharts(`Error generating chart data: ${error.message}`);
@@ -352,7 +356,12 @@ const UserDashboard = () => {
                   <div className="mt-4">
                     <h3 className="text-lg text-gray-400 mb-2">Generated {chartType} Chart</h3>
                     {/* <img src={analysisResult.chartUrl} alt={`${chartType} Chart`} className="max-w-full" /> */}
-                    <img src={`https://excel-analytics-platform.onrender.com${analysisResult.chartUrl}`} alt="Generated Chart" className="max-w-full" />
+                    {/* <img src={chartUrl} alt={`Generated Chart ${index + 1}`} className="max-w-full" /> */}
+                {chartUrls.map((url, index) => (
+            <div  className="border rounded-md p-4">
+              <img key={index} src={url} alt={`Chart ${index + 1}`} className="w-full h-auto" />
+            </div>
+          ))}
                     <button onClick={() => handleDownloadChart(analysisResult.chartUrl, chartType)} className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 mt-2">
                       <ArrowDownTrayIcon className="h-5 w-5 inline-block mr-2" /> Download
                     </button>
