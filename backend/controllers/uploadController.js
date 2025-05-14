@@ -454,7 +454,7 @@ export const generateAllCharts = async (req, res) => {
       if (!uploadRecord) {
           return res.status(404).json({ message: 'Upload record not found.' });
       }
-      
+      console.log(uploadRecord)
     const filePath = uploadRecord.filePath; // Retrieve the stored file path
     const workbook = XLSX.readFile(filePath);
     const sheetName = workbook.SheetNames[0];
