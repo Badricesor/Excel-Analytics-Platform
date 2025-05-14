@@ -53,17 +53,6 @@ const getChartConfiguration = (chartType, labels, dataValues, xAxis, yAxis, json
     },
   };
 
-
-//   // Add this check at the beginning of the function
-//    if (!jsonData || jsonData.length === 0) {
-//     return {
-//         type: chartType,
-//         data: { labels: [], datasets: [] }, // Return empty data
-//         options: { responsive: true, maintainAspectRatio: false },
-//     };
-// }
-
-
   switch (chartType) {
     case 'bar':
             return {
