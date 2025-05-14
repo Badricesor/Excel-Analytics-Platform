@@ -357,11 +357,7 @@ const UserDashboard = () => {
                     <h3 className="text-lg text-gray-400 mb-2">Generated {chartType} Chart</h3>
                     {/* <img src={analysisResult.chartUrl} alt={`${chartType} Chart`} className="max-w-full" /> */}
                     {/* <img src={chartUrl} alt={`Generated Chart ${index + 1}`} className="max-w-full" /> */}
-                {chartUrls.map((url, index) => (
-            <div  className="border rounded-md p-4">
-              <img key={index} src={url} alt={`Chart ${index + 1}`} className="w-full h-auto" />
-            </div>
-          ))}
+                
                     <button onClick={() => handleDownloadChart(analysisResult.chartUrl, chartType)} className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 mt-2">
                       <ArrowDownTrayIcon className="h-5 w-5 inline-block mr-2" /> Download
                     </button>
@@ -385,6 +381,13 @@ const UserDashboard = () => {
                 {chartData.type === 'bubble' && <Bubble data={chartData.data} options={chartData.options} />}
                 {chartData.type === 'scatter' && <Scatter data={chartData.data} options={chartData.options} />}
                 {/* Add download functionality if needed (e.g., using toBase64Image) */}
+
+                {chartUrls.map((url, index) => (
+            <div  className="border rounded-md p-4">
+              <img key={index} src={url} alt={`Chart ${index + 1}`} className="w-full h-auto" />
+            </div>
+          ))}
+
                  <button onClick={() => handleDownloadChart(result.data.chartUrl, result.chartType)} className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 mt-2">
                                 <ArrowDownTrayIcon className="h-5 w-5 inline-block mr-2" /> Download
                               </button>
