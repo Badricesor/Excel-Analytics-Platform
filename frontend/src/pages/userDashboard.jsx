@@ -387,11 +387,11 @@ const UserDashboard = () => {
                       {allAnalysisResults.map((url, index) => (
                         <div key={index} className="border rounded p-4 dark:border-gray-700">
                           <img
-                            src={url}
+                            src={`<span class="math-inline">\{import\.meta\.env\.VITE\_API\_URL\}</span>{url}`}
                             alt={`Generated Chart ${index + 1}`}
                             className="w-full h-auto"
                           />
-                          <li key={index} className="text-gray-400">{url}</li>
+                          {/* <li key={index} className="text-gray-400">{url}</li> */}
                         </div>
                       ))}
                     </div>
