@@ -266,6 +266,11 @@ const UserDashboard = () => {
     setActiveSection(section);
   };
 
+
+   useEffect(() => {
+    console.log('allAnalysisResults state in useEffect:', allAnalysisResults);
+  }, [allAnalysisResults]);
+
   return (
     <div className="bg-gray-900 dark:bg-gray-900 min-h-screen flex">
 
