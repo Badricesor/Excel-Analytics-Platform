@@ -368,9 +368,16 @@ const UserDashboard = () => {
         <div className="mt-4">
           <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">Generated Charts</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {allAnalysisResults.map((chartData, index) => (
+            {allAnalysisResults.map((url, index) => (
               <div key={index} className="border rounded p-4 dark:border-gray-700">
                 <h4 className="text-md font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                   {/* <div key={index} className="border rounded-md p-4"> */}
+              <img
+                src={url}
+                alt={`Generated Chart ${index + 1}`}
+                className="w-full h-auto"
+              />
+            {/* </div> */}
                   {chartData.options?.title?.text || `Chart ${index + 1}`}
                 </h4>
                 {chartData.type === 'bar' && <Bar data={chartData.data} options={chartData.options} />}
@@ -382,11 +389,11 @@ const UserDashboard = () => {
                 {chartData.type === 'scatter' && <Scatter data={chartData.data} options={chartData.options} />}
                 {/* Add download functionality if needed (e.g., using toBase64Image) */}
 
-                {chartUrls.map((url, index) => (
+                {/* {chartUrls.map((url, index) => (
             <div  className="border rounded-md p-4">
               <img key={index} src={url} alt={`Chart ${index + 1}`} className="w-full h-auto" />
             </div>
-          ))}
+          ))} */}
 
                  <button onClick={() => handleDownloadChart(result.data.chartUrl, result.chartType)} className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 mt-2">
                                 <ArrowDownTrayIcon className="h-5 w-5 inline-block mr-2" /> Download
