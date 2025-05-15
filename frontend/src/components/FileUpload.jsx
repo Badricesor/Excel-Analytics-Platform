@@ -52,7 +52,7 @@ const FileUpload = ({ onUploadSuccess }) => {
       <input type="file" accept=".xlsx, .xls" className='text-blue-500 text-sm hover:text-blue-600 cursor-pointer' onChange={handleFileChange} />
       </div>
       <button onClick={handleFileUpload} 
-      className={`bg-red-500 cursor-pointer hover:bg-red-400 text-white flex justify-center items-center font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline ${uploading ? 'opacity-50 cursor-not-allowed' : ''}`}
+      className={`bg-red-500 cursor-pointer hover:bg-gray-400 text-white flex justify-center items-center font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline ${uploading ? 'opacity-50 cursor-not-allowed' : ''}`}
       disabled={uploading || !file}>
         {uploading ? 'Uploading...' : 'Upload'}
       </button>
