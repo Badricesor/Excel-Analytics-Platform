@@ -278,14 +278,15 @@ const UserDashboard = () => {
     }
   }, [allAnalysisResults]);
 
-//   useEffect(() => {
-//   if (uploadId) {
-//     handleGenerateAllCharts();
-//   }
-// }, [uploadId]); // Call handleGenerateAllCharts when uploadId changes
+  useEffect(() => {
+  if (uploadId) {
+    handleGenerateAllCharts();
+  }
+}, [uploadId]); // Call handleGenerateAllCharts when uploadId changes
 
  return (
     <div className="bg-gray-900 dark:bg-gray-900 min-h-screen flex">
+      
       {/* Logout Button (Top Right) */}
       <div className="absolute top-6 right-6 flex items-center  space-x-2">
         <UserCircleIcon onClick={() => handleSetActiveSection('Profile')} className="h-9 w-9 mr-5  text-gray-500 cursor-pointer hover:text-gray-500 dark:text-gray-400" /> {/* Profile Icon */}
@@ -331,6 +332,7 @@ const UserDashboard = () => {
       <div className="flex-1 mt-14 p-8">
         {activeSection === 'Dashboard' && (
           <div>
+             <h2 className="text-2xl text-gray-200 mb-5 font-semibold">Welcome User!</h2>
             <h2 className="text-xl text-gray-400 mb-8">Upload an Excel File</h2>
             <div className="border-dashed border-2 border-gray-600 rounded-md p-14  flex flex-col items-center ">
               <CloudArrowUpIcon className="h-9 w-9 text-gray-500 mb-1" /> {/* Upload Icon */}

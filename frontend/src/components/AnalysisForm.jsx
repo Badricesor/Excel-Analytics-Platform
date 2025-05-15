@@ -1,14 +1,7 @@
 // frontend/src/components/AnalysisForm.jsx
 import React from 'react';
 
-const AnalysisForm = ({
-  headers,
-  xAxisChange,
-  yAxisChange,
-  chartTypeChange,
-  selectedXAxis,
-  selectedYAxis,
-  selectedChartType,
+const AnalysisForm = ({  headers,xAxisChange,yAxisChange,chartTypeChange,selectedXAxis,selectedYAxis,selectedChartType,
   chartTypeOptions,
 }) => {
   return (

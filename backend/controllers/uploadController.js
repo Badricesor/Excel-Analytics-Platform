@@ -1,60 +1,96 @@
 import { ChartJSNodeCanvas } from 'chartjs-node-canvas';
-import {  Chart,  LineController,  BarController,  PieController,  DoughnutController,  RadarController,  BubbleController,  ScatterController,CategoryScale,LinearScale,PointElement,LineElement,BarElement,ArcElement,RadialLinearScale,Title,Legend,Tooltip,} from 'chart.js';
-Chart.register(LineController,BarController,PieController,DoughnutController,RadarController,BubbleController,ScatterController,CategoryScale,LinearScale,PointElement,LineElement,BarElement,ArcElement,RadialLinearScale,Title,Legend,Tooltip);
+import {
+    Chart,
+    LineController,
+    BarController,
+    PieController,
+    DoughnutController,
+    RadarController,
+    BubbleController,
+    ScatterController,
+    CategoryScale,
+    LinearScale,
+    PointElement,
+    LineElement,
+    BarElement,
+    ArcElement,
+    RadialLinearScale,
+    Title,
+    Legend,
+    Tooltip,
+} from 'chart.js';
+Chart.register(
+    LineController,
+    BarController,
+    PieController,
+    DoughnutController,
+    RadarController,
+    BubbleController,
+    ScatterController,
+    CategoryScale,
+    LinearScale,
+    PointElement,
+    LineElement,
+    BarElement,
+    ArcElement,
+    RadialLinearScale,
+    Title,
+    Legend,
+    Tooltip
+);
 import fs from 'fs/promises';
 import multer from 'multer';
 import path from 'path';
-// import os from 'os';
 import XLSX from 'xlsx';
 import { User, Upload } from '../models/index.js';
 import { fileURLToPath } from 'url';
-import { dirname , join } from 'path';
+import { dirname, join } from 'path';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // Function to generate chart configuration based on chart type
 const getChartConfiguration = (chartType, labels, dataValues, xAxis, yAxis, jsonData) => {
-  
-  console.log(`Generating chart of type: ${chartType}`);  // Keep this
-  console.log('Labels:', labels);
-  console.log('Data Values:', dataValues);
-  console.log('jsonData', jsonData);
 
-  const baseConfig = {
-    data: {
-      labels: labels,
-      datasets: [{
-        label: `${yAxis} vs ${xAxis}`,
-        data: dataValues,
-      }],
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      scales: { // Define scales here
-        x: {
-            type: 'category', // Default to 'category' for x-axis
-            title: {
-                display: true,
-                text: xAxis
-            }
+    console.log(`Generating chart of type: ${chartType}`);  // Keep this
+    console.log('Labels:', labels);
+    console.log('Data Values:', dataValues);
+    console.log('jsonData', jsonData);
+
+    const baseConfig = {
+        data: {
+            labels: labels,
+            datasets: [{
+                label: `${yAxis} vs ${xAxis}`,
+                data: dataValues,
+            }],
         },
-        y: {
-            type: 'linear',  // Default to 'linear' for y-axis
-            beginAtZero: true,
-            title: {
-                display: true,
-                text: yAxis
-            }
-        }
-    },
-      // Add more common options here as needed
-    },
-  };
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: { // Define scales here
+                x: {
+                    type: 'category', // Default to 'category' for x-axis
+                    title: {
+                        display: true,
+                        text: xAxis
+                    }
+                },
+                y: {
+                    type: 'linear',   // Default to 'linear' for y-axis
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: yAxis
+                    }
+                }
+            },
+            // Add more common options here as needed
+        },
+    };
 
-  switch (chartType) {
-    case 'bar':
+    switch (chartType) {
+        case 'bar':
             return {
                 ...baseConfig,
                 type: 'bar',
@@ -65,547 +101,373 @@ const getChartConfiguration = (chartType, labels, dataValues, xAxis, yAxis, json
                         backgroundColor: 'rgba(54, 162, 235, 0.8)',
                     }],
                 },
-                 options: {
+                options: {
                     ...baseConfig.options,
                     scales: {
-                        x: {
-                            type: 'category',
-                            title: {
-                                display: true,
-                                text: xAxis
-                            }
-                        },
-                        y: {
-                            type: 'linear',
-                            beginAtZero: true,
-                             title: {
-                                display: true,
-                                text: yAxis
-                            }
+                        x: baseConfig.options.scales.x,
+                        y: baseConfig.options.scales.y,
+                    }
+                }
+            };
+        case 'line':
+            return {
+                ...baseConfig,
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        ...baseConfig.data.datasets[0],
+                        borderColor: 'rgba(75, 192, 192, 0.8)',
+                        fill: false,
+                    }],
+                },
+                options: {
+                    ...baseConfig.options,
+                    scales: {
+                        x: baseConfig.options.scales.x,
+                        y: baseConfig.options.scales.y,
+                    }
+                }
+            };
+        case 'pie':
+        case 'doughnut':
+            const pieDoughnutOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top'
+                    },
+                },
+            };
+            return {
+                ...baseConfig,
+                type: chartType,
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        ...baseConfig.data.datasets[0],
+                        backgroundColor: [
+                            'rgba(255, 99, 132, 0.8)',
+                            'rgba(54, 162, 235, 0.8)',
+                            'rgba(255, 206, 86, 0.8)',
+                            'rgba(75, 192, 192, 0.8)',
+                            'rgba(153, 102, 255, 0.8)',
+                        ],
+                    }],
+                },
+                options: pieDoughnutOptions, // Use the defined options
+            };
+        case 'radar':
+            console.log("Radar jsonData:", jsonData);
+            console.log("Radar xAxis:", xAxis, "Radar yAxis:", yAxis);
+            return {
+                ...baseConfig,
+                type: 'radar',
+                data: {
+                    labels: labels, // Radar uses labels
+                    datasets: [{
+                        label: `${yAxis} vs ${xAxis}`,
+                        data: dataValues,  //and dataValues
+                        backgroundColor: 'rgba(153, 102, 255, 0.2)',
+                        borderColor: 'rgba(153, 102, 255, 1)',
+                        pointBackgroundColor: 'rgba(153, 102, 255, 1)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgba(153, 102, 255, 1)',
+                    }],
+                },
+                options: {
+                    ...baseConfig.options,
+                    scales: {
+                        r: {
+                            angleLines: {
+                                display: true
+                            },
+                            suggestedMin: 0,
+                            suggestedMax: Math.max(...dataValues)
                         }
                     }
                 }
             };
-            case 'line':
-              return {
-                  ...baseConfig,
-                  type: 'line',
-                  data: {
-                      labels: labels,
-                      datasets: [{
-                          ...baseConfig.data.datasets[0],
-                          borderColor: 'rgba(75, 192, 192, 0.8)',
-                          fill: false,
-                      }],
-                  },
-                  options: {
-                      ...baseConfig.options,
-                       scales: {
-                          x: {
-                              type: 'category',
-                               title: {
-                                  display: true,
-                                  text: xAxis
-                              }
-                          },
-                          y: {
-                              type: 'linear',
-                              beginAtZero: true,
-                               title: {
-                                  display: true,
-                                  text: yAxis
-                              }
-                          }
-                      }
-                  }
-              };
-              case 'pie':
-                case 'doughnut':
-                    const pieDoughnutOptions = {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                position: 'top'
-                            },
-                        },
-                    };
-                    return {
-                        ...baseConfig,
-                        type: chartType,
-                        data: {
-                            labels: labels,
-                            datasets: [{
-                                ...baseConfig.data.datasets[0],
-                                backgroundColor: [
-                                    'rgba(255, 99, 132, 0.8)',
-                                    'rgba(54, 162, 235, 0.8)',
-                                    'rgba(255, 206, 86, 0.8)',
-                                    'rgba(75, 192, 192, 0.8)',
-                                    'rgba(153, 102, 255, 0.8)',
-                                ],
-                            }],
-                        },
-                        options: pieDoughnutOptions, // Use the defined options
-                    };
-    case 'radar':
-      console.log("Radar jsonData:", jsonData);
-      console.log("Radar xAxis:", xAxis, "Radar yAxis:", yAxis);
-        return {
-            ...baseConfig,
-            type: 'radar',
-            data: {
-                // ...baseConfig.data,
-                labels: labels, // Radar uses labels
-                datasets: [{
-                  label: `${yAxis} vs ${xAxis}`,
-                  data: dataValues,  //and dataValues
-                  backgroundColor: 'rgba(153, 102, 255, 0.2)',
-                  borderColor: 'rgba(153, 102, 255, 1)',
-                  pointBackgroundColor: 'rgba(153, 102, 255, 1)',
-                  pointBorderColor: '#fff',
-                  pointHoverBackgroundColor: '#fff',
-                  pointHoverBorderColor: 'rgba(153, 102, 255, 1)',
-              }],
-            },
-            options: {
-                ...baseConfig.options,
-                // специфичные опции для графика radar
-                scales: {
-                    r: {
-                        angleLines: {
-                            display: true
-                        },
-                        suggestedMin: 0,
-                        suggestedMax: Math.max(...dataValues)
-                    }
-                }
-            }
-        };
-    case 'bubble':
-      console.log("Bubble jsonData:", jsonData); 
-      console.log("Bubble xAxis:", xAxis, "Bubble yAxis:", yAxis);
-          return {
-            ...baseConfig,
-            type: 'bubble',
-            data: {
-               labels: labels,
-              datasets: [{
-                label: `${yAxis} vs ${xAxis}`,
-                data: jsonData.map(item => ({
-                  x: item[xAxis],
-                  y: item[yAxis],
-                  r: 10, // You might need a column for radius
-                })),
-                backgroundColor: 'rgba(255, 99, 132, 0.6)',
-                hoverBackgroundColor: 'rgba(255, 99, 132, 0.8)',
-                borderWidth: 0,
-              }],
-            },
-            options: {
-              ...baseConfig.options,
-              scales: {
-                x: { type: 'linear', position: 'bottom' },
-                y: { type: 'linear', position: 'left' },
-              },
-            },
-          };
-    case 'scatter':
-      console.log("Scatter jsonData:", jsonData); 
-      console.log("Scatter xAxis:", xAxis, "Scatter yAxis:", yAxis);
-          return {
-            ...baseConfig,
-            type: 'scatter',
-            data: {
-             labels: labels,
-              datasets: [{
-                label: `${yAxis} vs ${xAxis}`,
-                data: jsonData.map(item => ({
-                  x: item[xAxis],
-                  y: item[yAxis],
-                })),
-                backgroundColor: 'rgba(255, 159, 64, 0.8)',
-                borderColor: 'rgba(255, 159, 64, 1)',
-                borderWidth: 1,
-              }],
-            },
-            options: {
-              ...baseConfig.options,
-              scales: {
-                x: { type: 'linear', position: 'bottom' },
-                y: { type: 'linear', position: 'left' },
-              },
-            },
-          };
-    default:
-      return {
-        ...baseConfig,
-        type: 'bar',
-         options: {
-            ...baseConfig.options,
-             scales: {
-                x: {
-                    type: 'category',
-                     title: {
-                        display: true,
-                        text: xAxis
-                    }
+        case 'bubble':
+            console.log("Bubble jsonData:", jsonData);
+            console.log("Bubble xAxis:", xAxis, "Bubble yAxis:", yAxis);
+            return {
+                ...baseConfig,
+                type: 'bubble',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: `${yAxis} vs ${xAxis}`,
+                        data: jsonData.map(item => ({
+                            x: item[xAxis],
+                            y: item[yAxis],
+                            r: 10, // You might need a column for radius
+                        })),
+                        backgroundColor: 'rgba(255, 99, 132, 0.6)',
+                        hoverBackgroundColor: 'rgba(255, 99, 132, 0.8)',
+                        borderWidth: 0,
+                    }],
                 },
-                y: {
-                    type: 'linear',
-                    beginAtZero: true,
-                     title: {
-                        display: true,
-                        text: yAxis
+                options: {
+                    ...baseConfig.options,
+                    scales: {
+                        x: { type: 'linear', position: 'bottom' },
+                        y: { type: 'linear', position: 'left' },
+                    },
+                },
+            };
+        case 'scatter':
+            console.log("Scatter jsonData:", jsonData);
+            console.log("Scatter xAxis:", xAxis, "Scatter yAxis:", yAxis);
+            return {
+                ...baseConfig,
+                type: 'scatter',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: `${yAxis} vs ${xAxis}`,
+                        data: jsonData.map(item => ({
+                            x: item[xAxis],
+                            y: item[yAxis],
+                        })),
+                        backgroundColor: 'rgba(255, 159, 64, 0.8)',
+                        borderColor: 'rgba(255, 159, 64, 1)',
+                        borderWidth: 1,
+                    }],
+                },
+                options: {
+                    ...baseConfig.options,
+                    scales: {
+                        x: { type: 'linear', position: 'bottom' },
+                        y: { type: 'linear', position: 'left' },
+                    },
+                },
+            };
+        case 'area': // Handle 'area' chart type
+            return {
+                ...baseConfig,
+                type: 'line', // Area charts are based on line charts
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        ...baseConfig.data.datasets[0],
+                        borderColor: 'rgba(26, 188, 156, 0.8)',
+                        backgroundColor: 'rgba(26, 188, 156, 0.4)', // Add background color for the area fill
+                        fill: true,
+                    }],
+                },
+                options: {
+                    ...baseConfig.options,
+                    scales: {
+                        x: baseConfig.options.scales.x,
+                        y: baseConfig.options.scales.y,
                     }
                 }
-            }
-        }
-    };
-  }
+            };
+        default:
+            return {
+                ...baseConfig,
+                type: 'bar',
+                options: {
+                    ...baseConfig.options,
+                    scales: {
+                        x: baseConfig.options.scales.x,
+                        y: baseConfig.options.scales.y,
+                    }
+                }
+            };
+    }
 };
 
 // Configure multer storage (using the /tmp directory as shown in your screenshot)
 const storage = multer.diskStorage({
-  destination: '/tmp',
-  filename: (req, file, cb) => {
-    cb(null, `excelFile-${Date.now()}${path.extname(file.originalname)}`);
-  },
+    destination: '/tmp',
+    filename: (req, file, cb) => {
+        cb(null, `excelFile-${Date.now()}${path.extname(file.originalname())}`);
+    },
 });
 
 const fileFilter = (req, file, cb) => {
-  if (file.mimetype === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || file.mimetype === 'application/vnd.ms-excel') {
-    cb(null, true);
-  } else {
-    cb(null, false); // Reject unsupported file types
-  }
+    if (file.mimetype === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || file.mimetype === 'application/vnd.ms-excel') {
+        cb(null, true);
+    } else {
+        cb(null, false); // Reject unsupported file types
+    }
 };
 
 const upload = multer({
-  storage: storage,
-  fileFilter: fileFilter,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+    storage: storage,
+    fileFilter: fileFilter,
+    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
 });
 
 export const uploadFile = async (req, res) => {
-  console.log('Received file upload request...');
+    console.log('Received file upload request...');
 
-  upload.single('excelFile')(req, res, async (err) => {
-    console.log('After multer middleware');
-    console.log('req.file:', req.file);
-    if (err) {
-      console.error('Multer error:', err);
-      return res.status(500).json({ message: 'Error uploading file.', error: err });
-    }
-    if (!req.file) {
-      console.log('No file uploaded.');
-      return res.status(400).json({ message: 'No file uploaded.' });
-    }
+    upload.single('excelFile')(req, res, async (err) => {
+        console.log('After multer middleware');
+        console.log('req.file:', req.file);
+        if (err) {
+            console.error('Multer error:', err);
+            return res.status(500).json({ message: 'Error uploading file.', error: err });
+        }
+        if (!req.file) {
+            console.log('No file uploaded.');
+            return res.status(400).json({ message: 'No file uploaded.' });
+        }
 
-    const filePath = req.file.path; // Get the temporary file path
-    const originalName = req.file.originalname;
-    console.log('File path:', filePath);
-    console.log('Original name:', originalName);
+        const filePath = req.file.path; // Get the temporary file path
+        const originalName = req.file.originalname();
+        console.log('File path:', filePath);
+        console.log('Original name:', originalName);
 
-    try {
-      console.log('Attempting to read workbook...')
-      const workbook = XLSX.readFile(filePath);
-      const sheetName = workbook.SheetNames[0];
-      console.log('Sheet name:', sheetName);
-      const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
-      console.log('JSON data:', jsonData);
+        try {
+            console.log('Attempting to read workbook...')
+            const workbook = XLSX.readFile(filePath);
+            const sheetName = workbook.SheetNames[0];
+            console.log('Sheet name:', sheetName);
+            const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
+            console.log('JSON data:', jsonData);
 
-      const userId = req.user._id;
+            const userId = req.user._id;
 
-      const uploadRecord = new Upload({
-        filename: originalName,
-        filePath: filePath, // Store the temporary file path in the database
-        uploadDate: new Date(),
-        data: jsonData, // You might also store processed data if needed
-        userId: userId,
-      });
+            const uploadRecord = new Upload({
+                filename: originalName,
+                filePath: filePath, // Store the temporary file path in the database
+                uploadDate: new Date(),
+                data: jsonData, // You might also store processed data if needed
+                userId: userId,
+            });
 
-      console.log('Creating upload record:', uploadRecord);
-      const savedUpload = await uploadRecord.save();
-      console.log('Upload record saved:', savedUpload);
-      res.status(200).json({
-        message: 'File uploaded and processed successfully',
-        data: jsonData,
-        uploadId: savedUpload._id,
-        headers: Object.keys(jsonData[0] || {}),
-      });
-      console.log('Upload successful response sent.');
+            console.log('Creating upload record:', uploadRecord);
+            const savedUpload = await uploadRecord.save();
+            console.log('Upload record saved:', savedUpload);
+            res.status(200).json({
+                message: 'File uploaded and processed successfully',
+                data: jsonData,
+                uploadId: savedUpload._id,
+                headers: Object.keys(jsonData[0] || {}),
+            });
+            console.log('Upload successful response sent.');
 
-    } catch (error) {
-      console.error('Error processing uploaded file:', error);
-      res.status(500).json({ message: 'Error processing uploaded file.', error });
-      console.log('Error response sent.');
-    }
-  });
+        } catch (error) {
+            console.error('Error processing uploaded file:', error);
+            res.status(500).json({ message: 'Error processing uploaded file.', error });
+            console.log('Error response sent.');
+        } finally {
+            await fs.unlink(filePath); // Clean up the temporary file
+        }
+    });
 };
 
 export const analyzeData = async (req, res) => {
-  const { uploadId } = req.params;
-  const { xAxis, yAxis, chartType } = req.body;
+    const { uploadId } = req.params;
+    const { xAxis, yAxis, chartType } = req.body;
 
-  try {
-    const uploadRecord = await Upload.findById(uploadId);
-    if (!uploadRecord) {
-      return res.status(404).json({ message: 'Upload record not found.' });
-    }
-
-    const filePath = uploadRecord.filePath; // Retrieve the stored file path
-    const workbook = XLSX.readFile(filePath);
-    const sheetName = workbook.SheetNames[0];
-    const sheet = workbook.Sheets[sheetName];
-    const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
-
-    console.log('jsonData:', jsonData); // Add this
-    console.log('xAxis:', xAxis, 'yAxis:', yAxis); //and this
-
-    // const labels = jsonData.map(item => item[xAxis]);
-    // const dataValues = jsonData.map(item => item[yAxis] || 0);
-
-    // Manually extract headers
-    let headers = [];
-    if (sheet && sheet['!ref']) {  // Ensure sheet and ref exist
-        const range = XLSX.utils.decode_range(sheet['!ref']);
-        if (range.s.r === 0) { // Check if the first row is the header row
-            headers = [];
-            for (let c = range.s.c; c <= range.e.c; ++c) {
-                const cell = sheet[XLSX.utils.encode_cell({ r: 0, c: c })];
-                if (cell && cell.v) {
-                    headers.push(cell.v);  // Get the cell value as header
-                } else {
-                   headers.push(`Column${c}`); //make up a name
-                }
-            }
+    try {
+        const uploadRecord = await Upload.findById(uploadId);
+        if (!uploadRecord) {
+            return res.status(404).json({ message: 'Upload record not found.' });
         }
-    }
-    console.log('Headers from Excel:', headers);
 
-    if (!jsonData || jsonData.length === 0) {
-      console.error('Error: jsonData is empty or undefined.');
-      return res.status(400).json({ message: 'No data found in the uploaded file.' });
-    }
+        const filePath = uploadRecord.filePath; // Retrieve the stored file path
+        const workbook = XLSX.readFile(filePath);
+        const sheetName = workbook.SheetNames[0];
+        const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
 
-    let labels = [];
-        let dataValues = [];
+        console.log('jsonData:', jsonData);
+        console.log('xAxis:', xAxis, 'yAxis:', yAxis);
 
-        if(headers && headers.length > 0){
-          labels = jsonData.slice(1).map(row => row[headers.indexOf(xAxis)] || '');
-          dataValues = jsonData.slice(1).map(row => row[headers.indexOf(yAxis)] || 0);
-     }
-     else{
-          console.error('Headers are empty')
-          return res.status(400).json({message: 'No headers found in excel file'})
-     }
+        if (!jsonData || jsonData.length === 0 || !jsonData[0].hasOwnProperty(xAxis) || !jsonData[0].hasOwnProperty(yAxis)) {
+            console.error('Error: jsonData is empty, undefined, or missing selected columns.');
+            return res.status(400).json({ message: 'No data found or selected columns missing in the uploaded file.' });
+        }
 
-    console.log('Extracted Labels:', labels);  //and this
-    console.log('Extracted Data Values:', dataValues);//and this
+        const labels = jsonData.map(item => item[xAxis]?.toString() || '');
+        const dataValues = jsonData.map(item => Number(item[yAxis]) || 0);
 
-    // const chartData = {};
-    let chartUrl = '';
-    const width = 600;
+        console.log('Extracted Labels:', labels);
+        console.log('Extracted Data Values:', dataValues);
+
+        let chartUrl = '';
+        const width = 600;
         const height = 400;
         const chartJSNodeCanvas = new ChartJSNodeCanvas({ width, height });
-   
-      const configuration = getChartConfiguration(chartType, labels, dataValues, xAxis, yAxis,  jsonData);
-      console.log('Chart Configuration:', JSON.stringify(configuration, null, 2));
-      // const chartJSNodeCanvas = new ChartJSNodeCanvas({ width: 600, height: 400 });
-      const imageBuffer = await chartJSNodeCanvas.renderToBuffer(configuration);
-      const imageName = `${chartType}_chart_${uploadId}.png`;
-      // const imagePath = join(process.cwd(), 'uploads', imageName);
-      const imagePath = join(__dirname, '..', 'uploads', imageName);
-      await fs.writeFile(imagePath, imageBuffer);
-      chartUrl = `/uploads/${imageName}`; // Serve this static URL
-    // }
-    
-    // ... add similar logic for other chart types ...
-    
-    res.status(200).json({ chartData: {}, chartType, chartUrl });
-    // res.status(200).json({ chartData, chartType, chartUrl });
 
-  } catch (error) {
-    console.error('Error analyzing data:', error);
-    res.status(500).json({ message: 'Error analyzing data.', error });
-  }
+        const configuration = getChartConfiguration(chartType, labels, dataValues, xAxis, yAxis, jsonData);
+        console.log('Chart Configuration:', JSON.stringify(configuration, null, 2));
+        const imageBuffer = await chartJSNodeCanvas.renderToBuffer(configuration);
+        const imageName = `${chartType}_chart_${uploadId}_single.png`;
+        const imagePath = join(__dirname, '..', 'uploads', imageName);
+        await fs.writeFile(imagePath, imageBuffer);
+        chartUrl = `/uploads/${imageName}`; // Serve this static URL
+
+        res.status(200).json({ chartData: {}, chartType, chartUrl }); // Send back the chartUrl
+
+    } catch (error) {
+        console.error('Error analyzing data:', error);
+        res.status(500).json({ message: 'Error analyzing data.', error });
+    }
 };
 
 export const generateAllCharts = async (req, res) => {
-  const { uploadId } = req.params;
-  const { xAxis, yAxis } = req.body;
-  const chartTypes = ['bar', 'line', 'pie', 'doughnut', 'radar', 'bubble', 'scatter'];
-  const generatedChartUrls = [];
+    const { uploadId } = req.params;
+    const { xAxis, yAxis } = req.body;
+    const chartTypes = ['bar', 'line', 'pie', 'doughnut', 'radar', 'bubble', 'scatter', 'area']; // Include 'area'
+    const generatedChartUrls = [];
 
-  try {
-    console.log(`Generating all charts for upload ID: ${uploadId}`); 
-      const uploadRecord = await Upload.findById(uploadId);
-      if (!uploadRecord) {
-          return res.status(404).json({ message: 'Upload record not found.' });
-      }
-      console.log(uploadRecord)
-    const filePath = uploadRecord.filePath; // Retrieve the stored file path
-    const workbook = XLSX.readFile(filePath);
-    const sheetName = workbook.SheetNames[0];
-    const sheet = workbook.Sheets[sheetName];
-    const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
+    try {
+        console.log(`Generating all charts for upload ID: ${uploadId}`);
+        const uploadRecord = await Upload.findById(uploadId);
+        if (!uploadRecord) {
+            return res.status(404).json({ message: 'Upload record not found.' });
+        }
+        console.log('Upload Record:', uploadRecord);
+        const filePath = uploadRecord.filePath; // Retrieve the stored file path
+        const workbook = XLSX.readFile(filePath);
+        const sheetName = workbook.SheetNames[0];
+        const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
 
-    console.log('jsonData:', jsonData); // Add this
-    console.log('xAxis:', xAxis, 'yAxis:', yAxis); //and thi
+        console.log('JSON Data:', jsonData);
+        console.log('xAxis:', xAxis, 'yAxis:', yAxis);
 
-    //   const headersRow = jsonData[0]; // The first row is the header
-    // const indexOfXAxis = headersRow.indexOf(xAxis);
-    // const indexOfYAxis = headersRow.indexOf(yAxis);
-     let headers = [];
-    if (sheet && sheet['!ref']) {  // Ensure sheet and ref exist
-        const range = XLSX.utils.decode_range(sheet['!ref']);
-        if (range.s.r === 0) { // Check if the first row is the header row
-            headers = [];
-            for (let c = range.s.c; c <= range.e.c; ++c) {
-                const cell = sheet[XLSX.utils.encode_cell({ r: 0, c: c })];
-                if (cell && cell.v) {
-                    headers.push(cell.v);  // Get the cell value as header
-                } else {
-                   headers.push(`Column${c}`); //make up a name
-                }
+        if (!jsonData || jsonData.length === 0 || !jsonData[0].hasOwnProperty(xAxis) || !jsonData[0].hasOwnProperty(yAxis)) {
+            console.error('Error: jsonData is empty, undefined, or missing selected columns for generating all charts.');
+            return res.status(400).json({ message: 'No data found or selected columns missing in the uploaded file for generating charts.' });
+        }
+
+        const labels = jsonData.map(item => item[xAxis]?.toString() || '');
+        const dataValues = jsonData.map(item => Number(item[yAxis]) || 0);
+
+        console.log('Extracted Labels:', labels);
+        console.log('Extracted Data Values:', dataValues);
+
+        const width = 600;
+        const height = 400;
+        const chartJSNodeCanvas = new ChartJSNodeCanvas({ width, height });
+
+        for (const chartType of chartTypes) {
+            try {
+                const configuration = getChartConfiguration(chartType, labels, dataValues, xAxis, yAxis, jsonData);
+                const imageBuffer = await chartJSNodeCanvas.renderToBuffer(configuration);
+                const imageName = `${chartType}_chart_${uploadId}.png`;
+                const imagePath = join(__dirname, '..', 'uploads', imageName);
+                await fs.writeFile(imagePath, imageBuffer);
+                const chartUrl = `/uploads/${imageName}`;
+                generatedChartUrls.push(chartUrl);
+
+            } catch (renderError) {
+                console.error(`Error rendering ${chartType} chart:`, renderError);
+                // Optionally, you could skip this chart and continue with others
             }
         }
+        console.log('Generated chart URLs:', generatedChartUrls);
+        res.status(200).json({ message: 'All charts generated successfully.', chartUrls: generatedChartUrls });
+        console.log("final hit");
+    } catch (error) {
+        console.error('Error generating all charts:', error);
+        res.status(500).json({ message: 'Error generating all charts.', error });
     }
-    console.log('Headers from Excel:', headers);
-    let labels = [];
-        let dataValues = [];
-
-        if(headers && headers.length > 0){
-          labels = jsonData.slice(1).map(row => row[headers.indexOf(xAxis)] || '');
-          dataValues = jsonData.slice(1).map(row => row[headers.indexOf(yAxis)] || 0);
-     }
-     else{
-          console.error('Headers are empty')
-          return res.status(400).json({message: 'No headers found in excel file'})
-     }
-
-    console.log('Extracted Labels:', labels);  //and this
-    console.log('Extracted Data Values:', dataValues);//and this
-
-    //     if (indexOfXAxis === -1 || indexOfYAxis === -1) {
-    //   return res.status(400).json({ message: 'Selected columns not found in the file.' });
-    // }
-
-    // const labels = jsonData.slice(1).map(row => row[indexOfXAxis]);
-    // const dataValues = jsonData.slice(1).map(row => row[indexOfYAxis]);
-
-    // let chartData;
-    // const authorizationToken = req.headers.authorization;
-
-    //   if (!authorizationToken) {
-    //   console.log('Authorization token is missing.');
-    //   return res.status(401).json({ message: 'Authorization token is required.' });
-    // } else {
-    //   console.log('Authorization token:', authorizationToken);
-    //   // You can further verify or use the token here if needed
-    // }
-
-    //     if(headers && headers.length > 0){
-    //       labels = jsonData.slice(1).map(row => row[headers.indexOf(xAxis)] || '');
-    //       dataValues = jsonData.slice(1).map(row => row[headers.indexOf(yAxis)] || 0);
-    //  }
-    //  else{
-    //       console.error('Headers are empty')
-    //       return res.status(400).json({message: 'No headers found in excel file'})
-    //  }
-      
-    const width = 600;
-      const height = 400;
-      const chartJSNodeCanvas = new ChartJSNodeCanvas({ width, height });
-
-      for (const chartType of chartTypes) {
-          try {
-             const configuration = getChartConfiguration(chartType, labels, dataValues, xAxis, yAxis, jsonData);
-              const imageBuffer = await chartJSNodeCanvas.renderToBuffer(configuration);
-              const imageName = `${chartType}_chart_${uploadId}.png`;;
-              const imagePath = join(__dirname, '..', 'uploads', imageName);
-              await fs.writeFile(imagePath, imageBuffer);
-              // generatedChartUrls.push(`/uploads/${imageName}`);
-              const chartUrl = `/uploads/${imageName}`;
-              generatedChartUrls.push(chartUrl);
-              
-          } catch (renderError) {
-              console.error(`Error rendering ${chartType} chart:`, renderError);
-              // Optionally, you could skip this chart and continue with others
-          }
-      }
-      console.log('Generated chart URLs:', generatedChartUrls);
-      res.status(200).json({ message: 'All charts generated successfully.', chartUrls: generatedChartUrls });
-      console.log("final hit")
-  } catch (error) {
-      console.error('Error generating all charts:', error);
-      res.status(500).json({ message: 'Error generating all charts.', error });
-  }
 };
-
-
-// export const generateAllChartsData = async (req, res) => {
-//   const { uploadId } = req.params;
-//   const { xAxis, yAxis } = req.body;
-
-//   try {
-//     const upload = await Upload.findById(uploadId);
-//     if (!upload || !upload.filePath) {
-//       return res.status(404).json({ message: 'Upload not found.' });
-//     }
-
-//     const workbook = XLSX.readFile(upload.filePath);
-//     const sheetName = workbook.SheetNames[0];
-//     const sheet = workbook.Sheets[sheetName];
-//     const jsonData = XLSX.utils.sheet_to_json(sheet);
-
-//     const labels = jsonData.map(row => row[xAxis]);
-//     const data = jsonData.map(row => row[yAxis]);
-
-//     const allChartsData = [
-//      {
-//       type: 'line',
-//       data: { labels: yAxisData, datasets: [{ label: xAxis, data: xAxisData }] },
-//       options: { title: { display: true, text: 'Line Chart' } },
-//     },
-//     {
-//       type: 'bar',
-//       data: { labels: yAxisData, datasets: [{ label: xAxis, data: xAxisData }] },
-//       options: { title: { display: true, text: 'Bar Chart' } },
-//     },
-//     {
-//       type: 'pie',
-//       data: { labels: yAxisData, datasets: [{ data: xAxisData }] }, // Adjust data mapping for pie chart
-//       options: { title: { display: true, text: 'Pie Chart' } },
-//     },
-//     {
-//       type: 'doughnut',
-//       data: { labels: yAxisData, datasets: [{ data: xAxisData }] }, // Adjust data mapping
-//       options: { title: { display: true, text: 'Doughnut Chart' } },
-//     },
-//     {
-//       type: 'radar',
-//       data: { labels: yAxisData, datasets: [{ label: xAxis, data: xAxisData }] }, // Adjust data mapping
-//       options: { title: { display: true, text: 'Radar Chart' } },
-//     },
-//     {
-//       type: 'bubble',
-//       data: { // Bubble chart requires specific data structure (x, y, r)
-//         datasets: [{ label: xAxis, data: xAxisData.map((val, index) => ({ x: index, y: val, r: 5 })) }],
-//       },
-//       options: { title: { display: true, text: 'Bubble Chart' } },
-//     },
-//     {
-//       type: 'scatter',
-//       data: { datasets: [{ label: xAxis, data: xAxisData.map((val, index) => ({ x: index, y: val })) }] },
-//       options: { title: { display: true, text: 'Scatter Chart' } },
-//     },
-//   ];
-//     console.log('Generate All Charts Data endpoint hit!');
-//     res.status(200).json(allChartsData);
-//   } catch (error) {
-//     console.error('Error generating all charts data:', error);
-//     res.status(500).json({ message: 'Failed to generate all charts data.', error: error.message });
-//   }
-// };
