@@ -12,14 +12,13 @@ import path from 'path';
 console.log("current env: ",process.env.NODE_ENV);
 
 const app= express()
-const __dirname = path.resolve(); // Define __dirname if not available
+const __dirname = path.resolve(); 
 
 // Configure CORS to allow requests from your frontend's origin
 const corsOptions = {
-    origin: 'http://localhost:5173', // For development
-    // origin: 'your-frontend-deployed-url.com', // For production
+    origin: 'http://localhost:5173', 
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    credentials: true, // If you need to handle cookies
+    credentials: true, 
   };
 
 //Middleware
@@ -32,7 +31,8 @@ app.use('/api/version1', uploadRoutes);
 app.use('/api/version1/users', userRoutes);
 app.use('/api/version1/admin', adminRoutes);
 
-app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+// app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 const PORT= process.env.PORT || 8080
 
