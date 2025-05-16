@@ -285,7 +285,7 @@ const getChartConfiguration = (chartType, labels, dataValues, xAxis, yAxis, json
 const storage = multer.diskStorage({
     destination: '/tmp',
     filename: (req, file, cb) => {
-        cb(null, `excelFile-${Date.now()}${path.extname(file.originalname())}`);
+        cb(null, `excelFile-${Date.now()}${path.extname(file.originalname)}`);
     },
 });
 
@@ -319,7 +319,7 @@ export const uploadFile = async (req, res) => {
         }
 
         const filePath = req.file.path; // Get the temporary file path
-        const originalName = req.file.originalname();
+        const originalName = req.file.originalname;
         console.log('File path:', filePath);
         console.log('Original name:', originalName);
 
