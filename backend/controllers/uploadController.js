@@ -285,7 +285,7 @@ const getChartConfiguration = (chartType, labels, dataValues, xAxis, yAxis, json
 const storage = multer.diskStorage({
     destination: '/tmp',
     filename: (req, file, cb) => {
-        cb(null, `excelFile-${Date.now()}${path.extname(file.originalname())}`);
+        cb(null, `excelFile-${Date.now()}${path.extname(file.originalname)}`);
     },
 });
 
