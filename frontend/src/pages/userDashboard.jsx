@@ -278,11 +278,11 @@ const UserDashboard = () => {
     }
   }, [allAnalysisResults]);
 
-  useEffect(() => {
-  if (uploadId) {
-    handleGenerateAllCharts();
-  }
-}, [uploadId]); // Call handleGenerateAllCharts when uploadId changes
+//   useEffect(() => {
+//   if (uploadId) {
+//     handleGenerateAllCharts();
+//   }
+// }, [uploadId]); // Call handleGenerateAllCharts when uploadId changes
 
  return (
     <div className="bg-gray-900 dark:bg-gray-900 min-h-screen flex">
