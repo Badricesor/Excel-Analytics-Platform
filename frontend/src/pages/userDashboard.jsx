@@ -243,18 +243,19 @@ const UserDashboard = () => {
     }
   };
 
-  const handleDownloadChart = () => {
-    if (analysisResult?.chartUrl) {
-      const link = document.createElement('a');
-      link.href = analysisResult.chartUrl;
-      link.download = `chart.${analysisResult.chartType || 'png'}`; // Adjust extension as needed
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    } else {
-      setError('No chart available to download.');
-    }
-  };
+  const handleDownloadChart = (chartUrl, chartType = 'png') => {
+        if (chartUrl) {
+            const link = document.createElement('a');
+            // Construct the download URL based on the known /uploads/ structure
+            link.href = `${import.meta.env.VITE_API_URL}/uploads/${chartUrl.split('/').pop()}`;
+            link.download = `chart.${chartType}`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } else {
+            setError('No chart available to download.');
+        }
+    };
 
   const handleViewChart = (fileId) => {
     // Implement logic to view a previously generated chart
