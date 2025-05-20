@@ -66,6 +66,9 @@ const ProfilePage = () => {
         {profile.role && <p className="mb-2"><strong>Role:</strong> {profile.role}</p>}
         {/* Display other profile information as needed */}
       </div>
+      <div>
+        <button className='text-gray-100 bg-red-500 p-3 hover:bg-blue-500'>Delete Account</button>
+      </div>
     </div>
   );
 };

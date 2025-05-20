@@ -5,6 +5,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "prebuild": "npx tailwindcss -i ./src/index.css -o ./dist/output.css --minify",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d dist",
     "dev": "vite",
