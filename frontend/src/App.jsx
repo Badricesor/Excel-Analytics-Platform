@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, BrowserRouter } from 'react-router-dom';
 import React from 'react';
 import Signup from './pages/Signup.jsx';
 import UserDashboard from './pages/UserDashboard.jsx';
@@ -13,6 +13,7 @@ import AdminProtectedRoute from './components/AdminprotectedRoute.jsx'; // Impor
 function App() {
   return (
     <AuthProvider>
+   
       <Routes>
         <Route path="/" element={<WelcomePage />} />
         <Route path="/signup" element={<Signup />} />
@@ -21,6 +22,7 @@ function App() {
         <Route path="/admin/dashboard" element={<AdminProtectedRoute><AdminDashboard /></AdminProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
       </Routes>
+    
     </AuthProvider>
   );
 }
