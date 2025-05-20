@@ -1,6 +1,6 @@
 import express from 'express';
 import { protect } from '../middleware/authMiddleware.js';
-import { uploadFile, analyzeData, generateAllCharts} from '../controllers/uploadController.js';
+import { uploadFile, analyzeData, generateAllCharts,getUploadHistory, deleteUpload} from '../controllers/uploadController.js';
 import cors from 'cors';
 
 const router = express.Router();
@@ -20,5 +20,7 @@ router.post('/analyze/:uploadId', protect, analyzeData);
 // router.post('/:uploadId/generate-all-charts', generateAllCharts);
 router.post('/uploads/:uploadId/generate-all-charts', protect, generateAllCharts);
 // router.post('/uploads/:uploadId/generate-all-charts-data', protect, generateAllChartsData);
+router.get('/uploads/history',  getUploadHistory); // **ENSURE THIS LINE EXISTS AND IS CORRECT**
+router.delete('/uploads/:id', protect, deleteUpload);
 
 export default router;

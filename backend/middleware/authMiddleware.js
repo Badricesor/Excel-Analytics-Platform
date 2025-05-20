@@ -18,9 +18,9 @@ const protect = async (req, res, next) => {
       console.log('Token decoded:', decoded);
       console.log('Decoded ID from token:', decoded.id);
 
-      const user = await User.findById(decoded.id).select('-password');
-      console.log('Backend Found User:', user); // Log the found user
-      req.user = user;
+      // const user = await User.findById(decoded.id).select('-password');
+      // console.log('Backend Found User:', user); // Log the found user
+      // req.user = user;
 
       if (!decoded.id || !mongoose.Types.ObjectId.isValid(decoded.id)) {
         console.log('Error: Invalid user ID in token');

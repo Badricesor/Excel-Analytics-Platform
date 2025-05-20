@@ -120,12 +120,16 @@ const UserDashboard = () => {
     async function fetchUploadHistory(authToken) {
     setLoadingHistory(true);
     setErrorLoadingHistory('');
+    console.log("fetchuploadhistory hit")
+
     try {
+      console.log("inside fetchuploadhistory try catch block")
       const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/version1/upload/uploads/history`, {
         headers: {
           Authorization: `Bearer ${authToken}`,
         },
       });
+      console.log('Response from fetchUploadHistory:', response.data);
       setUploadHistory(response.data);
     } catch (error) {
       setErrorLoadingHistory('Failed to load upload history.');
@@ -136,6 +140,20 @@ const UserDashboard = () => {
   }
 
  const handleFileUploadSuccess = (data) => {
+setUploadSuccess('File uploaded successfully!');
+    setUploadError('');
+    console.log('Data received after upload in handleFileUploadSuccess:', data);
+
+    if (data && data.uploadId) {
+        setUploadId(data.uploadId);
+        const token = localStorage.getItem('token');
+        console.log('Token being used for fetchUploadHistory:', token);
+        fetchUploadHistory(token); // Refresh history immediately after successful upload
+    } else {
+        console.error("Upload successful, but uploadId is missing:", data);
+        // Optionally handle this error case
+    }
+
    setUploadSuccess('File uploaded successfully!');
     setUploadError('');
     setUploadId(data.uploadId);
@@ -243,17 +261,16 @@ const UserDashboard = () => {
     }
   };
 
-  const handleDownloadChart = (chartUrl, chartType = 'png') => {
-        if (chartUrl) {
+  const handleDownloadChart = (url, format = 'png') => {
+        if (url) {
             const link = document.createElement('a');
-            // Construct the download URL based on the known /uploads/ structure
-            link.href = `${import.meta.env.VITE_API_URL}/uploads/${chartUrl.split('/').pop()}`;
-            link.download = `chart.${chartType}`;
+            link.href = `${import.meta.env.VITE_API_URL}/uploads/${url.split('/').pop()}`;
+            link.download = `chart.${format}`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
         } else {
-            setError('No chart available to download.');
+            setError('No chart URL available to download.');
         }
     };
 
@@ -391,10 +408,11 @@ const UserDashboard = () => {
 
                 {allAnalysisResults.length > 0 && (
                   <div className="mt-4">
-                    <h3 className="text-lg text-gray-400 mb-2">{chartType} Chart</h3>
+                    <h3 className="text-lg text-gray-400 mb-2">All Generated Charts</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {allAnalysisResults.map((url, index) => (
                         <div key={index} className="border rounded p-4 dark:border-gray-700">
+                        
                           <img
                             src={`${import.meta.env.VITE_API_URL}/uploads/${url.split('/').pop()}`}
                             alt={`Generated Chart ${index + 1}`}
@@ -422,6 +440,7 @@ const UserDashboard = () => {
         {activeSection === 'History' && (
           <div>
             <h2 className="text-xl text-gray-400 mb-4">History</h2>
+            
             {userProfile?.uploadHistory?.length > 0 ? (
               <div className="overflow-x-auto">
                 <table className="min-w-full bg-gray-800 rounded-md shadow-md">

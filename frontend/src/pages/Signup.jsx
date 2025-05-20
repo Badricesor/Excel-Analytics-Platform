@@ -47,11 +47,6 @@ const SignUp = () => {
     
     <div className="flex justify-center items-center min-h-screen bg-gray-900 dark:bg-black-800 ">
 
-      {/* <header className="absolute top-0 left-0 p-6 flex items-center">
-        {logo && <img src={logo} alt="Logo" className="h-8 w-auto mr-3" />}
-        <h1 className="text-m font-semibold text-red-400">Excel Analytics Platform</h1>
-      </header> */}
-
       {/* input box */}
       <div className=" rounded-3xl px-8 py-6 mt-6 p-8 bg-gray-800 text-left border-1 border-gray-300 border-solid shadow-lg w-full max-w-md">
         

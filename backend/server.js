@@ -16,7 +16,7 @@ const __dirname = path.resolve();
 
 // Configure CORS to allow requests from your frontend's origin
 const corsOptions = {
-    origin: 'http://localhost:5173', 
+    origin: 'https://badricesor.github.io', 
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true, 
     allowedHeaders: 'Content-Type, Authorization, *', 

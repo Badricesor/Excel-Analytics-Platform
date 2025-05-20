@@ -133,31 +133,54 @@ export const uploadFile = async (req, res) => {
             return res.status(400).json({ message: 'No file uploaded.' });
         }
 
-        const tempFilePath = req.file.path;
-        const originalName = req.file.originalname;
+       try {
+            const { originalname } = req.file;
+            const tempFilePath = req.file.path;
+            const uniqueId = uuidv4();
+            const persistentFileName = `excel-${uniqueId}${path.extname(originalname)}`;
+            const persistentFilePath = path.join(EXCEL_UPLOAD_DIR, persistentFileName);
 
-        try {
-            const workbook = XLSX.readFile(tempFilePath);
+            await fs.copy(tempFilePath, persistentFilePath);
+
+            const workbook = XLSX.readFile(persistentFilePath);
             const sheetName = workbook.SheetNames[0];
-            const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
-            const userId = req.user._id;
+            const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1, raw: false });
 
-            // Construct a persistent file path
-            const persistentFilename = `excel-${Date.now()}-${userId}${path.extname(originalName)}`;
-            const persistentFilePath = path.join(EXCEL_UPLOAD_DIR, persistentFilename);
+             // Check if jsonData is not empty and has data.
+            let headers = [];
+            if (jsonData && jsonData.length > 0) {
+                // If the first row contains headers, use it.
+                if (typeof jsonData[0] === 'object') {
+                    headers = Object.keys(jsonData[0]);
+                } else {
+                    // Otherwise, generate default headers like "Column1", "Column2", etc.
+                    headers = Array.from({ length: jsonData[0].length }, (_, i) => `Column${i + 1}`);
+                }
+            }
 
-            // Read the file from the temporary location
-            const fileData = await fs.readFile(tempFilePath);
-
-            // Save the file to the persistent location
-            await fs.writeFile(persistentFilePath, fileData);
+            // Convert to the desired format, handling potential issues
+            const validJsonData = [];
+            if (jsonData && jsonData.length > 1) { //  && jsonData[0] is an array of headers
+                 const rawHeaders = headers;
+                for (let i = 1; i < jsonData.length; i++) {
+                    const row = jsonData[i];
+                    if (typeof row === 'object') {
+                        const rowObject = {};
+                         rawHeaders.forEach((header, index) => {
+                            rowObject[header] = row[index] ?? '';
+                        });
+                        validJsonData.push(rowObject);
+                    }
+                }
+            }
+            const userId = req.user._id;  // Get the user ID from the request
 
             const uploadRecord = new Upload({
-                filename: originalName,
-                filePath: persistentFilePath, // Store the persistent file path
+                filename: originalname,
+                filePath: persistentFilePath,
                 uploadDate: new Date(),
-                data: jsonData,
-                userId: userId,
+                data: validJsonData, // Use the cleaned data
+                userId: userId, // Store the user ID
             });
 
             const savedUpload = await uploadRecord.save();
@@ -166,14 +189,14 @@ export const uploadFile = async (req, res) => {
 
             res.status(200).json({
                 message: 'File uploaded and processed successfully',
-                data: jsonData,
+                data: validJsonData,
                 uploadId: savedUpload._id,
-                headers: Object.keys(jsonData[0] || {}),
+                headers: headers,
+                filePath: persistentFilePath
             });
-
         } catch (error) {
             console.error('Error processing uploaded file:', error);
-            res.status(500).json({ message: 'Error processing uploaded file.', error });
+            res.status(500).json({message: "error processing upload file"})
         }
     });
 };
@@ -254,7 +277,7 @@ export const generateAllCharts = async (req, res) => {
                 const imagePath = join(__dirname, '..', 'uploads', imageName);
                 await fs.writeFile(imagePath, imageBuffer);
                 const chartUrl = `/uploads/${imageName}`;
-                generatedChartUrls.push(chartUrl);
+                generatedChartUrls.push({ url: chartUrl, type: chartType });
             } catch (renderError) {
                 console.error(`Error rendering ${chartType} chart:`, renderError);
             }
@@ -265,5 +288,32 @@ export const generateAllCharts = async (req, res) => {
     } catch (error) {
         console.error('Error generating all charts:', error);
         res.status(500).json({ message: 'Error generating all charts.', error });
+    }
+};
+
+// --- ADD THIS FUNCTION HERE ---
+export const getUploadHistory = async (req, res) => {
+    try {
+        const userId = req.user._id; // Assuming you have user authentication middleware that populates req.user
+        const uploadHistory = await Upload.find({ userId }).sort({ uploadDate: -1 }); // Find uploads for the current user, sorted by date (newest first)
+        res.status(200).json(uploadHistory);
+    } catch (error) {
+        console.error('Error fetching upload history:', error);
+        res.status(500).json({ message: 'Failed to fetch upload history.', error: error.message });
+    }
+};
+// --- END OF ADDED FUNCTION ---
+
+export const deleteUpload = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const upload = await Upload.findByIdAndDelete(id);
+        if (!upload) {
+            return res.status(404).json({ message: 'Upload history not found.' });
+        }
+        res.status(200).json({ message: 'Upload history deleted successfully.' });
+    } catch (error) {
+        console.error('Error deleting upload history:', error);
+        res.status(500).json({ message: 'Failed to delete upload history.', error: error.message });
     }
 };
