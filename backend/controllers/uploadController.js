@@ -52,14 +52,10 @@ import { dirname, join } from 'path';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Define a persistent storage directory for Excel files
-// Note: This directory will still be used by `uploadFile` to temporarily save the Excel,
-// but `analyzeData` and `generateAllCharts` will read data from MongoDB instead of file system.
 const EXCEL_UPLOAD_DIR = path.join(__dirname, '..', 'uploads', 'excel');
 await fs.mkdir(EXCEL_UPLOAD_DIR, { recursive: true }).catch(console.error);
 
 
-// Function to generate chart configuration based on chart type
 const getChartConfiguration = (chartType, labels, dataValues, xAxis, yAxis, jsonData) => {
     const baseConfig = {
         data: {
@@ -210,8 +206,8 @@ const getChartConfiguration = (chartType, labels, dataValues, xAxis, yAxis, json
                 options: {
                     ...baseConfig.options,
                     scales: {
-                        x: { type: 'linear', position: 'linear', title: { display: true, text: xAxis } }, // Changed to linear scale
-                        y: { type: 'linear', position: 'linear', title: { display: true, text: yAxis } }  // Changed to linear scale
+                        x: { type: 'linear', position: 'linear', title: { display: true, text: xAxis } },
+                        y: { type: 'linear', position: 'linear', title: { display: true, text: yAxis } }
                     }
                 }
             };
@@ -222,9 +218,8 @@ const getChartConfiguration = (chartType, labels, dataValues, xAxis, yAxis, json
     }
 };
 
-// Configure multer storage to save initially to /tmp
 const storage = multer.diskStorage({
-    destination: '/tmp', // Multer will save to /tmp first
+    destination: '/tmp',
     filename: (req, file, cb) => {
         cb(null, `excelFile-${Date.now()}${path.extname(file.originalname)}`);
     },
@@ -241,7 +236,6 @@ const fileFilter = (req, file, cb) => {
 const upload = multer({ storage: storage, fileFilter: fileFilter, limits: { fileSize: 10 * 1024 * 1024 } });
 
 
-// --- `uploadFile` Function (No significant changes from last time, already good for headers) ---
 export const uploadFile = async (req, res) => {
     upload.single('excelFile')(req, res, async (err) => {
         if (err instanceof multer.MulterError) {
@@ -256,7 +250,7 @@ export const uploadFile = async (req, res) => {
         }
 
         const originalname = req.file.originalname;
-        const tempFilePath = req.file.path; // Multer's temporary file path
+        const tempFilePath = req.file.path;
 
         const uniqueId = uuidv4();
         const persistentFileName = `excel-${uniqueId}${path.extname(originalname)}`;
@@ -269,6 +263,7 @@ export const uploadFile = async (req, res) => {
             const sheetName = workbook.SheetNames[0];
             const worksheet = workbook.Sheets[sheetName];
 
+            // Option 1: Read all data including headers as arrays (for header extraction)
             const raw_data_with_headers = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: false });
 
             if (!raw_data_with_headers || raw_data_with_headers.length === 0) {
@@ -277,38 +272,54 @@ export const uploadFile = async (req, res) => {
                 return res.status(400).json({ message: 'No data found in the Excel file.' });
             }
 
-            const headers = raw_data_with_headers[0];
+            let headers = raw_data_with_headers[0];
 
-            if (!Array.isArray(headers) || headers.length === 0 || headers.some(h => typeof h !== 'string' || h.trim() === '')) {
-                 await fs.unlink(persistentFilePath).catch(e => console.error("Error unlinking persistent file:", e));
-                 await fs.unlink(tempFilePath).catch(e => console.error("Error unlinking temp file:", e));
+            // Clean and validate headers
+            if (!Array.isArray(headers) || headers.length === 0) {
+                // If the first row is not a valid header, try to infer or create default
+                // This scenario might happen if the Excel is just data, no explicit header row.
+                // For simplicity, we'll assume the first row IS headers.
+                // If it's still empty, it's an error.
+                await fs.unlink(persistentFilePath).catch(e => console.error("Error unlinking persistent file:", e));
+                await fs.unlink(tempFilePath).catch(e => console.error("Error unlinking temp file:", e));
                 return res.status(400).json({ message: 'Invalid or missing headers in the Excel file. Ensure the first row contains valid column names.' });
             }
 
-            const cleanedHeaders = headers.filter(h => h !== undefined && h !== null).map(String).map(h => h.trim());
-            const finalHeaders = cleanedHeaders.filter(h => h !== '');
+            // Clean headers: convert to string, trim whitespace, replace problematic characters
+            // Replace spaces with underscores or remove them for cleaner property access in JS
+            const cleanedHeaders = headers.map(h => {
+                if (h === undefined || h === null) return '';
+                let cleaned = String(h).trim();
+                // Optional: Replace problematic characters or spaces with underscores
+                // cleaned = cleaned.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
+                return cleaned;
+            }).filter(h => h !== ''); // Remove any headers that became empty after cleaning
 
-            if (finalHeaders.length === 0) {
+            if (cleanedHeaders.length === 0) {
                  await fs.unlink(persistentFilePath).catch(e => console.error("Error unlinking persistent file:", e));
                  await fs.unlink(tempFilePath).catch(e => console.error("Error unlinking temp file:", e));
                 return res.status(400).json({ message: 'No valid column headers found after cleaning. Please ensure the first row has proper names.' });
             }
 
-            const dataRows = raw_data_with_headers.slice(1);
+            // Option 2: Convert data to JSON objects using the cleaned headers
+            // Ensure data rows are skipped from the raw_data_with_headers
+            const dataRows = raw_data_with_headers.slice(1); // All rows AFTER the header
 
             const jsonDataObjects = dataRows.map(row => {
                 const obj = {};
-                finalHeaders.forEach((header, index) => {
-                    obj[header] = row[index] ?? '';
+                cleanedHeaders.forEach((header, index) => {
+                    // Map values using cleaned headers and their original indices
+                    obj[header] = row[index] ?? ''; // Use ?? '' to handle undefined/null values gracefully
                 });
                 return obj;
             });
+
 
             const userId = req.user._id;
 
             const uploadRecord = new Upload({
                 filename: originalname,
-                filePath: persistentFilePath, // Storing the file path for potential future use (e.g. download)
+                filePath: persistentFilePath,
                 uploadDate: new Date(),
                 data: jsonDataObjects, // Store the parsed JSON data directly in DB
                 userId: userId,
@@ -322,8 +333,8 @@ export const uploadFile = async (req, res) => {
                 message: 'File uploaded and processed successfully',
                 data: jsonDataObjects,
                 uploadId: savedUpload._id,
-                headers: finalHeaders,
-                filePath: persistentFilePath // Send the path back (optional, but consistent)
+                headers: cleanedHeaders, // Send the cleaned headers to the frontend
+                filePath: persistentFilePath
             });
 
         } catch (error) {
@@ -340,7 +351,6 @@ export const uploadFile = async (req, res) => {
 };
 
 
-// --- UPDATED `analyzeData` FUNCTION (Returns Base64 image) ---
 export const analyzeData = async (req, res) => {
     const { uploadId } = req.params;
     const { xAxis, yAxis, chartType } = req.body;
@@ -351,16 +361,16 @@ export const analyzeData = async (req, res) => {
             return res.status(404).json({ message: 'Upload record not found.' });
         }
 
-        // Use the 'data' stored in the upload record, NOT from file system
         const jsonData = uploadRecord.data;
 
         if (!jsonData || jsonData.length === 0) {
             return res.status(400).json({ message: 'No data found in the uploaded file for analysis.' });
         }
+        // Validate if selected columns exist in the first data object's keys
         if (!jsonData[0].hasOwnProperty(xAxis) || !jsonData[0].hasOwnProperty(yAxis)) {
+            console.warn(`Missing columns: xAxis=${xAxis}, yAxis=${yAxis}. Available keys: ${Object.keys(jsonData[0])}`);
             return res.status(400).json({ message: `Selected columns '${xAxis}' or '${yAxis}' missing in the uploaded file.` });
         }
-
 
         const labels = jsonData.map(item => String(item[xAxis]) || '');
         const dataValues = jsonData.map(item => Number(item[yAxis]) || 0);
@@ -371,11 +381,9 @@ export const analyzeData = async (req, res) => {
         const configuration = getChartConfiguration(chartType, labels, dataValues, xAxis, yAxis, jsonData);
         const imageBuffer = await chartJSNodeCanvas.renderToBuffer(configuration);
 
-        // Convert image buffer to Base64 data URL
         const chartDataUrl = `data:image/png;base64,${imageBuffer.toString('base64')}`;
 
-        // Return the Base64 data URL directly
-        res.status(200).json({ chartData: {}, chartType, chartUrl: chartDataUrl }); // Send data URL instead of file path
+        res.status(200).json({ chartData: {}, chartType, chartUrl: chartDataUrl });
 
     } catch (error) {
         console.error('Error analyzing data:', error);
@@ -383,10 +391,11 @@ export const analyzeData = async (req, res) => {
     }
 };
 
-// --- UPDATED `generateAllCharts` FUNCTION (Returns Base64 images) ---
+
+// --- UPDATED `generateAllCharts` FUNCTION ---
 export const generateAllCharts = async (req, res) => {
     const { uploadId } = req.params;
-    const { xAxis, yAxis } = req.body;
+    const { xAxis, yAxis } = req.body; // xAxis and yAxis are still required here for consistent data selection
     const chartTypes = ['bar', 'line', 'pie', 'doughnut', 'radar', 'bubble', 'scatter', 'area'];
     const generatedChartDetails = [];
 
@@ -396,15 +405,17 @@ export const generateAllCharts = async (req, res) => {
             return res.status(404).json({ message: 'Upload record not found.' });
         }
 
-        // Use the 'data' stored in the upload record, NOT from file system
         const jsonData = uploadRecord.data;
 
         if (!jsonData || jsonData.length === 0) {
             return res.status(400).json({ message: 'No data found in the uploaded file for generating charts.' });
         }
+        // Validate if selected columns exist in the first data object's keys
         if (!jsonData[0].hasOwnProperty(xAxis) || !jsonData[0].hasOwnProperty(yAxis)) {
+             console.warn(`Missing columns: xAxis=${xAxis}, yAxis=${yAxis}. Available keys: ${Object.keys(jsonData[0])}`);
              return res.status(400).json({ message: `Selected columns '${xAxis}' or '${yAxis}' missing in the uploaded file for generating charts.` });
         }
+
 
         const labels = jsonData.map(item => String(item[xAxis]) || '');
         const dataValues = jsonData.map(item => Number(item[yAxis]) || 0);
@@ -417,17 +428,16 @@ export const generateAllCharts = async (req, res) => {
             try {
                 const configuration = getChartConfiguration(chartType, labels, dataValues, xAxis, yAxis, jsonData);
                 const imageBuffer = await chartJSNodeCanvas.renderToBuffer(configuration);
-                // Convert image buffer to Base64 data URL
                 const chartDataUrl = `data:image/png;base64,${imageBuffer.toString('base64')}`;
 
-                generatedChartDetails.push({ url: chartDataUrl, type: chartType }); // Send data URL instead of file path
+                generatedChartDetails.push({ url: chartDataUrl, type: chartType });
                 console.log(`Generated chart: ${chartType}, Base64 URL length: ${chartDataUrl.length}`);
             } catch (renderError) {
                 console.error(`Error rendering ${chartType} chart:`, renderError);
             }
         }
 
-        console.log('Final generatedChartDetails (Base64 URLs):', generatedChartDetails.map(d => d.type)); // Log types only for brevity
+        console.log('Final generatedChartDetails (Base64 URLs):', generatedChartDetails.map(d => d.type));
         res.status(200).json({ message: 'All charts generated successfully.', chartDetails: generatedChartDetails });
 
     } catch (error) {
@@ -437,7 +447,6 @@ export const generateAllCharts = async (req, res) => {
 };
 
 
-// --- `getUploadHistory` Function (already good) ---
 export const getUploadHistory = async (req, res) => {
     try {
         if (!req.user || !req.user._id) {
@@ -455,7 +464,6 @@ export const getUploadHistory = async (req, res) => {
     }
 };
 
-// --- `deleteUpload` Function (Good, keeps physical file deletion optional) ---
 export const deleteUpload = async (req, res) => {
     const { id } = req.params;
     try {
@@ -463,7 +471,6 @@ export const deleteUpload = async (req, res) => {
         if (!upload) {
             return res.status(404).json({ message: 'Upload history not found.' });
         }
-        // Optionally, delete the physical Excel file from the server
         if (upload.filePath) {
             await fs.unlink(upload.filePath).catch(e => console.error("Error deleting physical file:", e));
         }
