@@ -361,64 +361,77 @@ export const analyzeData = async (req, res) => {
             return res.status(404).json({ message: 'Upload record not found.' });
         }
 
-        const jsonData = uploadRecord.data;
+        const filePath = uploadRecord.filePath; // Retrieve the stored file path
+        const workbook = XLSX.readFile(filePath);
+        const sheetName = workbook.SheetNames[0];
+        const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
 
-        if (!jsonData || jsonData.length === 0) {
-            return res.status(400).json({ message: 'No data found in the uploaded file for analysis.' });
-        }
-        // Validate if selected columns exist in the first data object's keys
-        if (!jsonData[0].hasOwnProperty(xAxis) || !jsonData[0].hasOwnProperty(yAxis)) {
-            console.warn(`Missing columns: xAxis=${xAxis}, yAxis=${yAxis}. Available keys: ${Object.keys(jsonData[0])}`);
-            return res.status(400).json({ message: `Selected columns '${xAxis}' or '${yAxis}' missing in the uploaded file.` });
+        console.log('jsonData:', jsonData);
+        console.log('xAxis:', xAxis, 'yAxis:', yAxis);
+
+        if (!jsonData || jsonData.length === 0 || !jsonData[0].hasOwnProperty(xAxis) || !jsonData[0].hasOwnProperty(yAxis)) {
+            console.error('Error: jsonData is empty, undefined, or missing selected columns.');
+            return res.status(400).json({ message: 'No data found or selected columns missing in the uploaded file.' });
         }
 
-        const labels = jsonData.map(item => String(item[xAxis]) || '');
+        const labels = jsonData.map(item => item[xAxis]?.toString() || '');
         const dataValues = jsonData.map(item => Number(item[yAxis]) || 0);
 
+        console.log('Extracted Labels:', labels);
+        console.log('Extracted Data Values:', dataValues);
+
+        let chartUrl = '';
         const width = 600;
         const height = 400;
         const chartJSNodeCanvas = new ChartJSNodeCanvas({ width, height });
+
         const configuration = getChartConfiguration(chartType, labels, dataValues, xAxis, yAxis, jsonData);
+        console.log('Chart Configuration:', JSON.stringify(configuration, null, 2));
         const imageBuffer = await chartJSNodeCanvas.renderToBuffer(configuration);
+        const imageName = `${chartType}_chart_${uploadId}_single.png`;
+        const imagePath = join(__dirname, '..', 'uploads', imageName);
+        await fs.writeFile(imagePath, imageBuffer);
+        chartUrl = `/uploads/${imageName}`; // Serve this static URL
 
-        const chartDataUrl = `data:image/png;base64,${imageBuffer.toString('base64')}`;
-
-        res.status(200).json({ chartData: {}, chartType, chartUrl: chartDataUrl });
+        res.status(200).json({ chartData: {}, chartType, chartUrl }); // Send back the chartUrl
 
     } catch (error) {
         console.error('Error analyzing data:', error);
-        res.status(500).json({ message: 'Error analyzing data.', error: error.message });
+        res.status(500).json({ message: 'Error analyzing data.', error });
     }
 };
 
-
-// --- UPDATED `generateAllCharts` FUNCTION ---
 export const generateAllCharts = async (req, res) => {
     const { uploadId } = req.params;
-    const { xAxis, yAxis } = req.body; // xAxis and yAxis are still required here for consistent data selection
-    const chartTypes = ['bar', 'line', 'pie', 'doughnut', 'radar', 'bubble', 'scatter', 'area'];
-    const generatedChartDetails = [];
+    const { xAxis, yAxis } = req.body;
+    const chartTypes = ['bar', 'line', 'pie', 'doughnut', 'radar', 'bubble', 'scatter', 'area']; // Include 'area'
+    const generatedChartUrls = [];
 
     try {
+        console.log(`Generating all charts for upload ID: ${uploadId}`);
         const uploadRecord = await Upload.findById(uploadId);
         if (!uploadRecord) {
             return res.status(404).json({ message: 'Upload record not found.' });
         }
+        console.log('Upload Record:', uploadRecord);
+        const filePath = uploadRecord.filePath; // Retrieve the stored file path
+        const workbook = XLSX.readFile(filePath);
+        const sheetName = workbook.SheetNames[0];
+        const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
 
-        const jsonData = uploadRecord.data;
+        console.log('JSON Data:', jsonData);
+        console.log('xAxis:', xAxis, 'yAxis:', yAxis);
 
-        if (!jsonData || jsonData.length === 0) {
-            return res.status(400).json({ message: 'No data found in the uploaded file for generating charts.' });
+        if (!jsonData || jsonData.length === 0 || !jsonData[0].hasOwnProperty(xAxis) || !jsonData[0].hasOwnProperty(yAxis)) {
+            console.error('Error: jsonData is empty, undefined, or missing selected columns for generating all charts.');
+            return res.status(400).json({ message: 'No data found or selected columns missing in the uploaded file for generating charts.' });
         }
-        // Validate if selected columns exist in the first data object's keys
-        if (!jsonData[0].hasOwnProperty(xAxis) || !jsonData[0].hasOwnProperty(yAxis)) {
-             console.warn(`Missing columns: xAxis=${xAxis}, yAxis=${yAxis}. Available keys: ${Object.keys(jsonData[0])}`);
-             return res.status(400).json({ message: `Selected columns '${xAxis}' or '${yAxis}' missing in the uploaded file for generating charts.` });
-        }
 
-
-        const labels = jsonData.map(item => String(item[xAxis]) || '');
+        const labels = jsonData.map(item => item[xAxis]?.toString() || '');
         const dataValues = jsonData.map(item => Number(item[yAxis]) || 0);
+
+        console.log('Extracted Labels:', labels);
+        console.log('Extracted Data Values:', dataValues);
 
         const width = 600;
         const height = 400;
@@ -428,24 +441,25 @@ export const generateAllCharts = async (req, res) => {
             try {
                 const configuration = getChartConfiguration(chartType, labels, dataValues, xAxis, yAxis, jsonData);
                 const imageBuffer = await chartJSNodeCanvas.renderToBuffer(configuration);
-                const chartDataUrl = `data:image/png;base64,${imageBuffer.toString('base64')}`;
+                const imageName = `${chartType}_chart_${uploadId}.png`;
+                const imagePath = join(__dirname, '..', 'uploads', imageName);
+                await fs.writeFile(imagePath, imageBuffer);
+                const chartUrl = `/uploads/${imageName}`;
+                generatedChartUrls.push(chartUrl);
 
-                generatedChartDetails.push({ url: chartDataUrl, type: chartType });
-                console.log(`Generated chart: ${chartType}, Base64 URL length: ${chartDataUrl.length}`);
             } catch (renderError) {
                 console.error(`Error rendering ${chartType} chart:`, renderError);
+                // Optionally, you could skip this chart and continue with others
             }
         }
-
-        console.log('Final generatedChartDetails (Base64 URLs):', generatedChartDetails.map(d => d.type));
-        res.status(200).json({ message: 'All charts generated successfully.', chartDetails: generatedChartDetails });
-
+        console.log('Generated chart URLs:', generatedChartUrls);
+        res.status(200).json({ message: 'All charts generated successfully.', chartUrls: generatedChartUrls });
+        console.log("final hit");
     } catch (error) {
         console.error('Error generating all charts:', error);
-        res.status(500).json({ message: 'Error generating all charts.', error: error.message });
+        res.status(500).json({ message: 'Error generating all charts.', error });
     }
 };
-
 
 export const getUploadHistory = async (req, res) => {
     try {
