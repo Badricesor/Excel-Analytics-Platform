@@ -141,7 +141,7 @@ export const uploadFile = async (req, res) => {
             const persistentFileName = `excel-${uniqueId}${path.extname(originalname)}`;
             const persistentFilePath = path.join(EXCEL_UPLOAD_DIR, persistentFileName);
 
-            await fs.copyFile(tempFilePath, persistentFilePath);
+            await fs.copy(tempFilePath, persistentFilePath);
 
             const workbook = XLSX.readFile(persistentFilePath);
             const sheetName = workbook.SheetNames[0];
@@ -216,6 +216,8 @@ export const analyzeData = async (req, res) => {
         const workbook = XLSX.readFile(filePath);
         const sheetName = workbook.SheetNames[0];
         const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
+
+                                                    
 
         if (!jsonData || jsonData.length === 0 || !jsonData[0].hasOwnProperty(xAxis) || !jsonData[0].hasOwnProperty(yAxis)) {
             return res.status(400).json({ message: 'No data found or selected columns missing in the uploaded file.' });

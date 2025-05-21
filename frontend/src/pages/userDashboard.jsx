@@ -124,7 +124,7 @@ const UserDashboard = () => {
 
     try {
       console.log("inside fetchuploadhistory try catch block")
-      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/version1/upload/uploads/history`, {
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/version1/uploads/history`, {
         headers: {
           Authorization: `Bearer ${authToken}`,
         },
