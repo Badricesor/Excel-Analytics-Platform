@@ -124,81 +124,62 @@ const fileFilter = (req, file, cb) => {
 const upload = multer({ storage: storage, fileFilter: fileFilter, limits: { fileSize: 10 * 1024 * 1024 } });
 
 export const uploadFile = async (req, res) => {
-    upload.single('excelFile')(req, res, async (err) => {
-        if (err) {
-            console.error('Multer error:', err);
-            return res.status(500).json({ message: 'Error uploading file.', error: err });
+  console.log('Received file upload request...');
+
+  upload.single('excelFile')(req, res, async (err) => {
+    console.log('After multer middleware');
+    console.log('req.file:', req.file);
+    if (err) {
+      console.error('Multer error:', err);
+      return res.status(500).json({ message: 'Error uploading file.', error: err });
+    }
+    if (!req.file) {
+      console.log('No file uploaded.');
+      return res.status(400).json({ message: 'No file uploaded.' });
+    }
+
+    const filePath = req.file.path; // Get the temporary file path
+    const originalName = req.file.originalname;
+    console.log('File path:', filePath);
+    console.log('Original name:', originalName);
+
+    try {
+      console.log('Attempting to read workbook...')
+      const workbook = XLSX.readFile(filePath);
+      const sheetName = workbook.SheetNames[0];
+      console.log('Sheet name:', sheetName);
+      const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
+      console.log('JSON data:', jsonData);
+
+      const userId = req.user._id;
+
+      const uploadRecord = new Upload({
+        filename: originalName,
+        filePath: filePath, // Store the temporary file path in the database
+        uploadDate: new Date(),
+        data: jsonData, // You might also store processed data if needed
+        userId: userId,
+      });
+
+      console.log('Creating upload record:', uploadRecord);
+      const savedUpload = await uploadRecord.save();
+      console.log('Upload record saved:', savedUpload);
+      res.status(200).json({
+        message: 'File uploaded and processed successfully',
+        data: jsonData,
+        uploadId: savedUpload._id,
+        headers: Object.keys(jsonData[0] || {}),
+      });
+      console.log('Upload successful response sent.');
+
+    } catch (error) {
+      console.error('Error processing uploaded file:', error);
+      res.status(500).json({ message: 'Error processing uploaded file.', error });
+      console.log('Error response sent.');
+    }finally {
+            await fs.unlink(filePath); // Clean up the temporary file
         }
-        if (!req.file) {
-            return res.status(400).json({ message: 'No file uploaded.' });
-        }
-
-       try {
-            const { originalname } = req.file;
-            const tempFilePath = req.file.path;
-            const uniqueId = uuidv4();
-            const persistentFileName = `excel-${uniqueId}${path.extname(originalname)}`;
-            const persistentFilePath = path.join(EXCEL_UPLOAD_DIR, persistentFileName);
-
-            await fs.copy(tempFilePath, persistentFilePath);
-
-            const workbook = XLSX.readFile(persistentFilePath);
-            const sheetName = workbook.SheetNames[0];
-            const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1, raw: false });
-
-             // Check if jsonData is not empty and has data.
-            let headers = [];
-            if (jsonData && jsonData.length > 0) {
-                // If the first row contains headers, use it.
-                if (typeof jsonData[0] === 'object') {
-                    headers = Object.keys(jsonData[0]);
-                } else {
-                    // Otherwise, generate default headers like "Column1", "Column2", etc.
-                    headers = Array.from({ length: jsonData[0].length }, (_, i) => `Column${i + 1}`);
-                }
-            }
-
-            // Convert to the desired format, handling potential issues
-            const validJsonData = [];
-            if (jsonData && jsonData.length > 1) { //  && jsonData[0] is an array of headers
-                 const rawHeaders = headers;
-                for (let i = 1; i < jsonData.length; i++) {
-                    const row = jsonData[i];
-                    if (typeof row === 'object') {
-                        const rowObject = {};
-                         rawHeaders.forEach((header, index) => {
-                            rowObject[header] = row[index] ?? '';
-                        });
-                        validJsonData.push(rowObject);
-                    }
-                }
-            }
-            const userId = req.user._id;  // Get the user ID from the request
-
-            const uploadRecord = new Upload({
-                filename: originalname,
-                filePath: persistentFilePath,
-                uploadDate: new Date(),
-                data: validJsonData, // Use the cleaned data
-                userId: userId, // Store the user ID
-            });
-
-            const savedUpload = await uploadRecord.save();
-
-            await fs.unlink(tempFilePath); // Clean up the temporary file
-
-            res.status(200).json({
-                message: 'File uploaded and processed successfully',
-                data: validJsonData,
-                uploadId: savedUpload._id,
-                headers: headers,
-                filePath: persistentFilePath
-            });
-        } catch (error) {
-            console.error('Error processing uploaded file:', error);
-            res.status(500).json({message: "error processing upload file"})
-        }
-    });
+  });
 };
 
 export const analyzeData = async (req, res) => {
