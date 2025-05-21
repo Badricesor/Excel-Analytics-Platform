@@ -16,15 +16,16 @@ const __dirname = path.resolve();
 
 // Configure CORS to allow requests from your frontend's origin
 const corsOptions = {
-     origin: (origin, callback) => {
-    console.log('Request Origin:', origin); // Log the incoming origin
-    const allowedOrigins = ['http://localhost:5173', 'https://excel-analytics-platform.onrender.com'];
-    if (allowedOrigins.includes(origin) || !origin) { // !origin allows same-origin requests in dev
-      callback(null, true);
-    } else {
-       callback(new Error('Not allowed by CORS'));
-}
-},
+//      origin: (origin, callback) => {
+//     console.log('Request Origin:', origin); // Log the incoming origin
+//     const allowedOrigins = ['http://localhost:5173', 'https://excel-analytics-platform.onrender.com'];
+//     if (allowedOrigins.includes(origin) || !origin) { // !origin allows same-origin requests in dev
+//       callback(null, true);
+//     } else {
+//        callback(new Error('Not allowed by CORS'));
+// }
+// },
+origin: 'http://localhost:5173',
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true, 
     allowedHeaders: 'Content-Type, Authorization, *', 
