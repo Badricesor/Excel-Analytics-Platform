@@ -141,7 +141,7 @@ export const uploadFile = async (req, res) => {
             const persistentFileName = `excel-${uniqueId}${path.extname(originalname)}`;
             const persistentFilePath = path.join(EXCEL_UPLOAD_DIR, persistentFileName);
 
-            await fs.copy(tempFilePath, persistentFilePath);
+            await fs.copyFile(tempFilePath, persistentFilePath);
 
             const workbook = XLSX.readFile(persistentFilePath);
             const sheetName = workbook.SheetNames[0];
