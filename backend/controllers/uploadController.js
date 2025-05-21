@@ -141,7 +141,7 @@ export const uploadFile = async (req, res) => {
             const persistentFileName = `excel-${uniqueId}${path.extname(originalname)}`;
             const persistentFilePath = path.join(EXCEL_UPLOAD_DIR, persistentFileName);
 
-             await fs.promises.copyFile(tempFilePath, persistentFilePath);
+            await fs.copy(tempFilePath, persistentFilePath);
 
             const workbook = XLSX.readFile(persistentFilePath);
             const sheetName = workbook.SheetNames[0];
@@ -186,7 +186,7 @@ export const uploadFile = async (req, res) => {
 
             const savedUpload = await uploadRecord.save();
 
-            await fs.promises.unlink(tempFilePath); // Clean up the temporary file
+            await fs.unlink(tempFilePath); // Clean up the temporary file
 
             res.status(200).json({
                 message: 'File uploaded and processed successfully',
