@@ -7,7 +7,7 @@ import  connectDb  from './config/db.js';
 import uploadRoutes from './routes/uploadRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
-import path from 'path';
+// import path from 'path';
 
 console.log("current env: ",process.env.NODE_ENV);
 
