@@ -4,7 +4,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import AuthContext from '../context/AuthContext.jsx';
 import FileUpload from '../components/FileUpload.jsx';
 import logo from '../../public/logo.png';
-import { ArrowDownTrayIcon, UserCircleIcon, CloudArrowUpIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { ArrowDownTrayIcon, UserCircleIcon, CloudArrowUpIcon } from '@heroicons/react/24/outline';
 import AnalysisForm from '../components/AnalysisForm.jsx'
 
 const UserDashboard = () => {
@@ -421,7 +421,7 @@ const UserDashboard = () => {
 
                 {activeSection === 'History' && (
                     <div>
-                        <h2 className="text-xl text-gray-400 mb-4">History</h2>
+                        <h2 className="text-2xl text-gray-300 mb-4">History</h2>
 
                         {loadingHistory && <p className="text-gray-500">Loading history...</p>}
                         {errorLoadingHistory && <p className="text-red-500">{errorLoadingHistory}</p>}
@@ -432,17 +432,18 @@ const UserDashboard = () => {
                                         <tr>
                                             <th className="py-2 px-4 text-left text-gray-300">File Name</th>
                                             <th className="py-2 px-4 text-left text-gray-300">Date</th>
+                                            
                                             <th className="py-2 px-4 text-center text-gray-300">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {userProfile.uploadHistory.map((item) => (
-                                            <tr key={item._id} className="border-b border-gray-700">
+                                            <tr key={item._id} className="border-b border-gray-400">
                                                 <td className="py-2 px-4 text-gray-400">{item.filename}</td>
-                                                <td className="py-2 px-4 text-gray-400">{new Date(item.uploadDate).toLocaleDateString()}</td>
+                                                <td className="py-2 px-4 text-gray-400">{new Date(item.uploadDate).toLocaleString()}</td>
                                                 <td className="py-2 px-4 text-center space-x-2">
-                                                    <button onClick={() => handleDeleteChart(item._id)} className="text-red-500 hover:text-red-400">
-                                                        <TrashIcon className="h-5 w-5 inline-block" />
+                                                    <button onClick={() => handleDeleteChart(item._id)} className="text-sm text-gray-300 hover:bg-red-500 pt-1 pb-1 pl-3 pr-3 border-2 border-rose-500">
+                                                        Delete
                                                     </button>
                                                 </td>
                                             </tr>
@@ -465,15 +466,16 @@ const UserDashboard = () => {
 
                 {activeSection === 'Profile' && (
                     <div>
-                        <h2 className="text-xl text-gray-400 mb-4">Profile</h2>
+                        <h2 className="text-2xl text-gray-300 mb-4">Profile</h2>
                         {userProfile && (
                             <div className="bg-gray-800 rounded-md shadow-md p-6">
-                                <label className="text-red-500" >Username</label>
-                                <p className="text-gray-400"> {userProfile.username}</p>
-                                <label className="text-red-500" >Email</label>
-                                <p className="text-gray-400">{userProfile.email}</p>
+                                <label className="text-red-500 text-xl"  >Username</label>
+                                <p className="text-gray-400 text-md"> {userProfile.username}</p>
+                                <label className="text-red-500 text-xl" >Email</label>
+                                <p className="text-gray-400 text-md">{userProfile.email}</p>
                             </div>
                         )}
+                        <button className='mt-10 text-md hover:bg-red-800 border-2 border-red-500 rounded-md p-2 text-gray-100'>Delete Account</button>
                     </div>
                 )}
             </div>

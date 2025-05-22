@@ -135,7 +135,7 @@ const AdminDashboard = () => {
               </button> */}
               <button onClick={() => setActiveSection('manageData')} className={`flex items-center space-x-2 py-2 px-4 rounded-md text-gray-400 hover:text-gray-100 hover:bg-gray-700 ${activeSection === 'manageData' ? 'bg-gray-700 text-red-500' : ''}`}>
             <svg className="h-5 w-5 cursor-pointer" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
-            <span>Manage Users</span>
+            <span>Manage Data</span>
           </button>
             </li>
           </ul>
@@ -247,7 +247,7 @@ const AdminDashboard = () => {
 
        {activeSection === 'manageData' && (
           <div className="bg-gray-800 shadow rounded-lg p-6">
-            <h3 className="text-xl font-semibold mb-4 text-gray-300">Manage Data (All Uploads)</h3>
+            <h3 className="text-xl font-semibold mb-4 text-gray-300">All Uploads</h3>
             {uploads.length === 0 ? (
               <p className="text-gray-400">No files uploaded yet.</p>
             ) : (
