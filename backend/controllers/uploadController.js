@@ -38,21 +38,25 @@ Chart.register(
     Legend,
     Tooltip
 );
-import fs from 'fs/promises';
+import fs from 'fs/promises'; // Keep fs/promises for async file operations
 import multer from 'multer';
 import path from 'path';
 import XLSX from 'xlsx';
 import { User, Upload } from '../models/index.js';
-import { fileURLToPath } from 'url';
+import { fileURLTo__filename } from 'url';
 import { dirname, join } from 'path';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Function to generate chart configuration based on chart type
-const getChartConfiguration = (chartType, labels, dataValues, xAxis, yAxis, jsonData) => {
+// Define the permanent upload directory relative to the current file
+// Assuming this file is in a 'controllers' folder, and 'uploads' is in the root backend folder
+const uploadDir = path.join(__dirname, '..', '..', 'uploads'); // Go up two directories to reach the root backend, then into 'uploads'
 
-    console.log(`Generating chart of type: ${chartType}`);  // Keep this
+// Function to generate chart configuration (no change needed here)
+const getChartConfiguration = (chartType, labels, dataValues, xAxis, yAxis, jsonData) => {
+    // ... (Your existing getChartConfiguration code) ...
+    console.log(`Generating chart of type: ${chartType}`);
     console.log('Labels:', labels);
     console.log('Data Values:', dataValues);
     console.log('jsonData', jsonData);
@@ -68,16 +72,16 @@ const getChartConfiguration = (chartType, labels, dataValues, xAxis, yAxis, json
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            scales: { // Define scales here
+            scales: {
                 x: {
-                    type: 'category', // Default to 'category' for x-axis
+                    type: 'category',
                     title: {
                         display: true,
                         text: xAxis
                     }
                 },
                 y: {
-                    type: 'linear',   // Default to 'linear' for y-axis
+                    type: 'linear',
                     beginAtZero: true,
                     title: {
                         display: true,
@@ -85,7 +89,6 @@ const getChartConfiguration = (chartType, labels, dataValues, xAxis, yAxis, json
                     }
                 }
             },
-            // Add more common options here as needed
         },
     };
 
@@ -156,7 +159,7 @@ const getChartConfiguration = (chartType, labels, dataValues, xAxis, yAxis, json
                         ],
                     }],
                 },
-                options: pieDoughnutOptions, // Use the defined options
+                options: pieDoughnutOptions,
             };
         case 'radar':
             console.log("Radar jsonData:", jsonData);
@@ -165,10 +168,10 @@ const getChartConfiguration = (chartType, labels, dataValues, xAxis, yAxis, json
                 ...baseConfig,
                 type: 'radar',
                 data: {
-                    labels: labels, // Radar uses labels
+                    labels: labels,
                     datasets: [{
                         label: `${yAxis} vs ${xAxis}`,
-                        data: dataValues,  //and dataValues
+                        data: dataValues,
                         backgroundColor: 'rgba(153, 102, 255, 0.2)',
                         borderColor: 'rgba(153, 102, 255, 1)',
                         pointBackgroundColor: 'rgba(153, 102, 255, 1)',
@@ -203,7 +206,7 @@ const getChartConfiguration = (chartType, labels, dataValues, xAxis, yAxis, json
                         data: jsonData.map(item => ({
                             x: item[xAxis],
                             y: item[yAxis],
-                            r: 10, // You might need a column for radius
+                            r: 10, // You might need a column for radius, or calculate dynamically
                         })),
                         backgroundColor: 'rgba(255, 99, 132, 0.6)',
                         hoverBackgroundColor: 'rgba(255, 99, 132, 0.8)',
@@ -245,16 +248,16 @@ const getChartConfiguration = (chartType, labels, dataValues, xAxis, yAxis, json
                     },
                 },
             };
-        case 'area': // Handle 'area' chart type
+        case 'area':
             return {
                 ...baseConfig,
-                type: 'line', // Area charts are based on line charts
+                type: 'line',
                 data: {
                     labels: labels,
                     datasets: [{
                         ...baseConfig.data.datasets[0],
                         borderColor: 'rgba(26, 188, 156, 0.8)',
-                        backgroundColor: 'rgba(26, 188, 156, 0.4)', // Add background color for the area fill
+                        backgroundColor: 'rgba(26, 188, 156, 0.4)',
                         fill: true,
                     }],
                 },
@@ -281,9 +284,18 @@ const getChartConfiguration = (chartType, labels, dataValues, xAxis, yAxis, json
     }
 };
 
-// Configure multer storage (using the /tmp directory as shown in your screenshot)
+// Configure multer storage
 const storage = multer.diskStorage({
-    destination: '/tmp',
+    destination: async (req, file, cb) => {
+        // Ensure the directory exists before saving the file
+        try {
+            await fs.mkdir(uploadDir, { recursive: true });
+            cb(null, uploadDir);
+        } catch (err) {
+            console.error('Error creating upload directory:', err);
+            cb(err); // Pass error to Multer
+        }
+    },
     filename: (req, file, cb) => {
         cb(null, `excelFile-${Date.now()}${path.extname(file.originalname)}`);
     },
@@ -293,7 +305,7 @@ const fileFilter = (req, file, cb) => {
     if (file.mimetype === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || file.mimetype === 'application/vnd.ms-excel') {
         cb(null, true);
     } else {
-        cb(null, false); // Reject unsupported file types
+        cb(new Error('Unsupported file type. Only Excel files are allowed.'), false); // Pass error to Multer
     }
 };
 
@@ -303,29 +315,31 @@ const upload = multer({
     limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
 });
 
-
 export const uploadFile = async (req, res) => {
     console.log('Received file upload request...');
 
     upload.single('excelFile')(req, res, async (err) => {
         console.log('After multer middleware');
         console.log('req.file:', req.file);
-        if (err) {
+        if (err instanceof multer.MulterError) {
             console.error('Multer error:', err);
-            return res.status(500).json({ message: 'Error uploading file.', error: err });
+            return res.status(400).json({ message: `Multer error: ${err.message}`, error: err });
+        } else if (err) {
+            console.error('Unknown upload error:', err);
+            return res.status(500).json({ message: 'Error uploading file.', error: err.message });
         }
         if (!req.file) {
             console.log('No file uploaded.');
-            return res.status(400).json({ message: 'No file uploaded.' });
+            return res.status(400).json({ message: 'No file uploaded or unsupported file type.' });
         }
 
-        const filePath = req.file.path; // Get the temporary file path
+        const filePath = req.file.path; // Get the permanent file path
         const originalName = req.file.originalname;
         console.log('File path:', filePath);
         console.log('Original name:', originalName);
 
         try {
-            console.log('Attempting to read workbook...')
+            console.log('Attempting to read workbook...');
             const workbook = XLSX.readFile(filePath);
             const sheetName = workbook.SheetNames[0];
             console.log('Sheet name:', sheetName);
@@ -336,9 +350,11 @@ export const uploadFile = async (req, res) => {
 
             const uploadRecord = new Upload({
                 filename: originalName,
-                // filePath: filePath, // Store the temporary file path in the database
+                filePath: filePath, // Store the permanent file path in the database
                 uploadDate: new Date(),
-                data: jsonData, // You might also store processed data if needed
+                // You can still store jsonData here if you want faster access for small files
+                // but for larger files, re-reading from disk is the purpose of Option 2.
+                // data: jsonData, // Optional: for faster access if file size is small
                 userId: userId,
             });
 
@@ -347,7 +363,7 @@ export const uploadFile = async (req, res) => {
             console.log('Upload record saved:', savedUpload);
             res.status(200).json({
                 message: 'File uploaded and processed successfully',
-                data: jsonData,
+                data: jsonData, // Send parsed data for immediate frontend use
                 uploadId: savedUpload._id,
                 headers: Object.keys(jsonData[0] || {}),
             });
@@ -355,11 +371,13 @@ export const uploadFile = async (req, res) => {
 
         } catch (error) {
             console.error('Error processing uploaded file:', error);
+            // If an error occurs during processing, consider deleting the partially uploaded file
+            await fs.unlink(filePath).catch(e => console.error("Error deleting partial upload:", e));
             res.status(500).json({ message: 'Error processing uploaded file.', error });
             console.log('Error response sent.');
-        } finally {
-            await fs.unlink(filePath); // Clean up the temporary file
         }
+        // IMPORTANT: NO `finally` block with `fs.unlink(filePath)` here.
+        // The file is meant to persist in the `uploads` folder.
     });
 };
 
@@ -373,10 +391,20 @@ export const analyzeData = async (req, res) => {
             return res.status(404).json({ message: 'Upload record not found.' });
         }
 
-        const filePath = uploadRecord.filePath; // Retrieve the stored file path
+        const filePath = uploadRecord.filePath; // Retrieve the stored permanent file path
+        console.log(`Attempting to read file from stored path: ${filePath}`);
+
+        // Check if the file exists before trying to read it
+        try {
+            await fs.access(filePath); // Checks if file exists and is accessible
+        } catch (accessError) {
+            console.error(`File not found at path: ${filePath}`, accessError);
+            return res.status(404).json({ message: 'Uploaded Excel file not found on server. It might have been deleted or moved.' });
+        }
+
         const workbook = XLSX.readFile(filePath);
         const sheetName = workbook.SheetNames[0];
-        const jsonData = uploadRecord.data;
+        const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
 
         console.log('jsonData:', jsonData);
         console.log('xAxis:', xAxis, 'yAxis:', yAxis);
@@ -400,12 +428,14 @@ export const analyzeData = async (req, res) => {
         const configuration = getChartConfiguration(chartType, labels, dataValues, xAxis, yAxis, jsonData);
         console.log('Chart Configuration:', JSON.stringify(configuration, null, 2));
         const imageBuffer = await chartJSNodeCanvas.renderToBuffer(configuration);
+        // Save chart images to the same 'uploads' folder for consistency
         const imageName = `${chartType}_chart_${uploadId}_single.png`;
-        const imagePath = join(__dirname, '..', 'uploads', imageName);
+        const imagePath = join(uploadDir, imageName); // Use the permanent upload directory
         await fs.writeFile(imagePath, imageBuffer);
-        chartUrl = `/uploads/${imageName}`; // Serve this static URL
+        chartUrl = `/uploads/${imageName}`; // This URL must be served statically
 
-        res.status(200).json({ chartData: {}, chartType, chartUrl }); // Send back the chartUrl
+        res.status(200).json({ chartData: {}, chartType, chartUrl });
+        console.log('Chart analysis successful response sent.');
 
     } catch (error) {
         console.error('Error analyzing data:', error);
@@ -416,7 +446,7 @@ export const analyzeData = async (req, res) => {
 export const generateAllCharts = async (req, res) => {
     const { uploadId } = req.params;
     const { xAxis, yAxis } = req.body;
-    const chartTypes = ['bar', 'line', 'pie', 'doughnut', 'radar', 'bubble', 'scatter', 'area']; // Include 'area'
+    const chartTypes = ['bar', 'line', 'pie', 'doughnut', 'radar', 'bubble', 'scatter', 'area'];
     const generatedChartUrls = [];
 
     try {
@@ -426,10 +456,20 @@ export const generateAllCharts = async (req, res) => {
             return res.status(404).json({ message: 'Upload record not found.' });
         }
         console.log('Upload Record:', uploadRecord);
-        const filePath = uploadRecord.filePath; // Retrieve the stored file path
+        const filePath = uploadRecord.filePath; // Retrieve the stored permanent file path
+        console.log(`Attempting to read file from stored path: ${filePath}`);
+
+        // Check if the file exists before trying to read it
+        try {
+            await fs.access(filePath);
+        } catch (accessError) {
+            console.error(`File not found at path: ${filePath}`, accessError);
+            return res.status(404).json({ message: 'Uploaded Excel file not found on server. It might have been deleted or moved.' });
+        }
+
         const workbook = XLSX.readFile(filePath);
         const sheetName = workbook.SheetNames[0];
-        const jsonData = uploadRecord.data;
+        const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
 
         console.log('JSON Data:', jsonData);
         console.log('xAxis:', xAxis, 'yAxis:', yAxis);
@@ -454,14 +494,14 @@ export const generateAllCharts = async (req, res) => {
                 const configuration = getChartConfiguration(chartType, labels, dataValues, xAxis, yAxis, jsonData);
                 const imageBuffer = await chartJSNodeCanvas.renderToBuffer(configuration);
                 const imageName = `${chartType}_chart_${uploadId}.png`;
-                const imagePath = join(__dirname, '..', 'uploads', imageName);
+                const imagePath = join(uploadDir, imageName); // Use the permanent upload directory
                 await fs.writeFile(imagePath, imageBuffer);
                 const chartUrl = `/uploads/${imageName}`;
                 generatedChartUrls.push(chartUrl);
 
             } catch (renderError) {
-                console.error(`Error rendering ${chartType} chart:`, renderError);
-                // Optionally, you could skip this chart and continue with others
+                console.error(`Error rendering ${chartType} chart for uploadId ${uploadId}:`, renderError);
+                // Continue with other charts even if one fails
             }
         }
         console.log('Generated chart URLs:', generatedChartUrls);
@@ -473,17 +513,16 @@ export const generateAllCharts = async (req, res) => {
     }
 };
 
-// --- Your existing getUploadHistory function ---
 export const getUploadHistory = async (req, res) => {
     try {
         if (!req.user || !req.user._id) {
             console.error('Error: User not authenticated or user ID missing in request.');
             return res.status(401).json({ message: 'User not authenticated or user ID missing.' });
         }
-        const userId = req.user._id; // Assuming you have user authentication middleware that populates req.user
-        console.log(`Workspaceing upload history for userId: ${userId}`); // Log the user ID
-        const uploadHistory = await Upload.find({ userId }).sort({ uploadDate: -1 }); // Find uploads for the current user, sorted by date (newest first)
-        console.log(`Found ${uploadHistory.length} upload records for user ${userId}`); // Log the number of records found
+        const userId = req.user._id;
+        console.log(`Workspaceing upload history for userId: ${userId}`);
+        const uploadHistory = await Upload.find({ userId }).sort({ uploadDate: -1 });
+        console.log(`Found ${uploadHistory.length} upload records for user ${userId}`);
         res.status(200).json(uploadHistory);
     } catch (error) {
         console.error('Error fetching upload history:', error);
@@ -491,7 +530,6 @@ export const getUploadHistory = async (req, res) => {
     }
 };
 
-// --- Your existing deleteUpload function ---
 export const deleteUpload = async (req, res) => {
     const { id } = req.params;
     try {
@@ -499,11 +537,23 @@ export const deleteUpload = async (req, res) => {
         if (!upload) {
             return res.status(404).json({ message: 'Upload history not found.' });
         }
-        // Optionally, delete the physical Excel file from the server
+        // Delete the physical Excel file from the server
         if (upload.filePath) {
-            await fs.unlink(upload.filePath).catch(e => console.error("Error deleting physical file:", e));
+            await fs.unlink(upload.filePath).catch(e => console.error("Error deleting physical Excel file:", e));
         }
-        res.status(200).json({ message: 'Upload history deleted successfully.' });
+
+        // Also delete any generated chart images associated with this uploadId
+        // This is a more robust way to clean up
+        const chartImagePattern = `*_chart_${id}*.png`; // Match images like bar_chart_UPLOADID.png, scatter_chart_UPLOADID_single.png
+        const chartImagesToDelete = await fs.readdir(uploadDir);
+        for (const file of chartImagesToDelete) {
+            if (file.includes(`_chart_${id}`)) { // More robust check
+                const imagePathToDelete = join(uploadDir, file);
+                await fs.unlink(imagePathToDelete).catch(e => console.error(`Error deleting chart image ${file}:`, e));
+            }
+        }
+
+        res.status(200).json({ message: 'Upload history and associated files deleted successfully.' });
     } catch (error) {
         console.error('Error deleting upload history:', error);
         res.status(500).json({ message: 'Failed to delete upload history.', error: error.message });
