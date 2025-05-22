@@ -336,7 +336,7 @@ export const uploadFile = async (req, res) => {
 
             const uploadRecord = new Upload({
                 filename: originalName,
-                filePath: filePath, // Store the temporary file path in the database
+                // filePath: filePath, // Store the temporary file path in the database
                 uploadDate: new Date(),
                 data: jsonData, // You might also store processed data if needed
                 userId: userId,
@@ -376,7 +376,7 @@ export const analyzeData = async (req, res) => {
         const filePath = uploadRecord.filePath; // Retrieve the stored file path
         const workbook = XLSX.readFile(filePath);
         const sheetName = workbook.SheetNames[0];
-        const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
+        const jsonData = uploadRecord.data;
 
         console.log('jsonData:', jsonData);
         console.log('xAxis:', xAxis, 'yAxis:', yAxis);
@@ -429,7 +429,7 @@ export const generateAllCharts = async (req, res) => {
         const filePath = uploadRecord.filePath; // Retrieve the stored file path
         const workbook = XLSX.readFile(filePath);
         const sheetName = workbook.SheetNames[0];
-        const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
+        const jsonData = uploadRecord.data;
 
         console.log('JSON Data:', jsonData);
         console.log('xAxis:', xAxis, 'yAxis:', yAxis);
