@@ -42,10 +42,10 @@ import fs from 'fs/promises';
 import multer from 'multer';
 import path from 'path';
 import XLSX from 'xlsx';
-import { User, Upload } from '../models/index.js';
+import { User, Upload } from '../models/index.js'; // Ensure Upload is correctly imported
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import fetch from 'node-fetch'; // Import node-fetch for downloading files
+import fetch from 'node-fetch';
 
 // Cloudinary import and configuration
 import { v2 as cloudinary } from 'cloudinary';
@@ -54,19 +54,15 @@ cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
     api_key: process.env.CLOUDINARY_API_KEY,
     api_secret: process.env.CLOUDINARY_API_SECRET,
-    secure: true // Always use HTTPS
+    secure: true
 });
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Multer will now save to the /tmp directory (Render's temporary storage)
-// This file will be read and then immediately uploaded to Cloudinary, then deleted.
-const tempUploadDir = '/tmp'; // Standard temporary directory on Linux systems like Render
+const tempUploadDir = '/tmp';
 
-// Function to generate chart configuration (no change needed here from previous versions)
 const getChartConfiguration = (chartType, labels, dataValues, xAxis, yAxis, jsonData) => {
-    // ... (Your existing getChartConfiguration code - ensure it's up-to-date) ...
     console.log(`Generating chart of type: ${chartType}`);
     console.log('Labels:', labels);
     console.log('Data Values:', dataValues);
@@ -295,9 +291,8 @@ const getChartConfiguration = (chartType, labels, dataValues, xAxis, yAxis, json
     }
 };
 
-// Configure multer storage to save to /tmp
 const storage = multer.diskStorage({
-    destination: tempUploadDir, // Save to /tmp
+    destination: tempUploadDir,
     filename: (req, file, cb) => {
         cb(null, `excelFile-${Date.now()}${path.extname(file.originalname)}`);
     },
@@ -323,6 +318,7 @@ export const uploadFile = async (req, res) => {
     upload.single('excelFile')(req, res, async (err) => {
         console.log('After multer middleware');
         console.log('req.file:', req.file);
+        console.log('req.user:', req.user); // Added for debugging req.user
         if (err instanceof multer.MulterError) {
             console.error('Multer error:', err);
             return res.status(400).json({ message: `Multer error: ${err.message}`, error: err });
@@ -335,60 +331,75 @@ export const uploadFile = async (req, res) => {
             return res.status(400).json({ message: 'No file uploaded or unsupported file type.' });
         }
 
-        const filePath = req.file.path; // Temporary file path in /tmp
+        const filePath = req.file.path;
         const originalName = req.file.originalname;
+        const fileSize = req.file.size; // Get file size
+        const fileType = req.file.mimetype; // Get file type (though not in your schema, good to log)
         console.log('Temporary File path:', filePath);
         console.log('Original name:', originalName);
+        console.log('File Size:', fileSize); // Log file size
+        console.log('File Type:', fileType); // Log file type
 
         try {
-            // 1. Read the Excel file from /tmp to process data
             console.log('Attempting to read workbook...');
             const workbook = XLSX.readFile(filePath);
             const sheetName = workbook.SheetNames[0];
             const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
-            console.log('JSON data (first 5 rows):', jsonData.slice(0, 5)); // Log only a few for brevity
+            console.log('JSON data (first 5 rows):', jsonData.slice(0, 5));
 
-            // 2. Upload the Excel file to Cloudinary
             const excelUploadResult = await cloudinary.uploader.upload(filePath, {
-                resource_type: "raw", // Treat as a raw file (not an image)
-                folder: "excel_files", // Organize in a specific folder on Cloudinary
-                public_id: `excel-${Date.now()}-${path.basename(originalName, path.extname(originalName))}` // Unique ID based on timestamp and original name
+                resource_type: "raw",
+                folder: "excel_files",
+                public_id: `excel-${Date.now()}-${path.basename(originalName, path.extname(originalName))}`
             });
             console.log('Excel file uploaded to Cloudinary:', excelUploadResult.secure_url);
+            console.log('Cloudinary Public ID for Excel:', excelUploadResult.public_id);
 
+            // Ensure req.user and req.user._id exist
+            if (!req.user || !req.user._id) {
+                throw new Error('User not authenticated or user ID is missing from token.');
+            }
             const userId = req.user._id;
+            console.log('User ID from req.user:', userId);
 
             const uploadRecord = new Upload({
                 filename: originalName,
-                filePath: excelUploadResult.secure_url, // Store the Cloudinary URL in the database
+                filePath: excelUploadResult.secure_url,
                 uploadDate: new Date(),
-                // data: jsonData, // OPTIONAL: Only store if you are confident file sizes will be small (less than 16MB per doc)
+                dataSize: fileSize, // <-- This is the key fix! Maps req.file.size to schema's dataSize.
                 userId: userId,
+                // If you later add cloudinaryPublicId or fileType to your schema,
+                // uncomment and add them here as well.
+                // cloudinaryPublicId: excelUploadResult.public_id,
+                // fileType: fileType,
             });
 
-            console.log('Creating upload record:', uploadRecord);
+            console.log('Attempting to save upload record:', uploadRecord);
             const savedUpload = await uploadRecord.save();
-            console.log('Upload record saved:', savedUpload);
+            console.log('Upload record successfully saved:', savedUpload);
+
             res.status(200).json({
                 message: 'File uploaded and processed successfully',
-                data: jsonData, // Send parsed data for immediate frontend use (this isn't persisted)
+                data: jsonData,
                 uploadId: savedUpload._id,
                 headers: Object.keys(jsonData[0] || {}),
             });
             console.log('Upload successful response sent.');
 
         } catch (error) {
-            console.error('Error processing uploaded file:', error);
-            res.status(500).json({ message: 'Error processing uploaded file.', error: error.message });
+            console.error('Error in file upload or saving history:', error);
+            // Log the error specifically for Mongoose validation errors
+            if (error.name === 'ValidationError') {
+                console.error('Mongoose Validation Error Details:', error.errors);
+            }
+            res.status(500).json({ message: 'Failed to upload file or store upload history.', error: error.message });
             console.log('Error response sent.');
         } finally {
-            // ALWAYS delete the temporary file from /tmp after processing/uploading
             await fs.unlink(filePath).catch(e => console.error("Error deleting temporary file:", e));
         }
     });
 };
 
-// Helper function to download Excel from Cloudinary to /tmp for processing
 async function downloadExcelFromCloudinary(url) {
     console.log(`Downloading Excel from Cloudinary: ${url}`);
     const response = await fetch(url);
@@ -396,19 +407,17 @@ async function downloadExcelFromCloudinary(url) {
         throw new Error(`Failed to download file from Cloudinary: ${response.statusText}`);
     }
     const arrayBuffer = await response.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer); // Convert ArrayBuffer to Node.js Buffer
+    const buffer = Buffer.from(arrayBuffer);
 
-    // Save to a temporary file in /tmp for XLSX.readFile
     const tempFilePath = path.join(tempUploadDir, `downloaded_excel_${Date.now()}.xlsx`);
     await fs.writeFile(tempFilePath, buffer);
     return tempFilePath;
 }
 
-
 export const analyzeData = async (req, res) => {
     const { uploadId } = req.params;
     const { xAxis, yAxis, chartType } = req.body;
-    let downloadedFilePath = null; // To track and delete the temporary Excel file
+    let downloadedFilePath = null;
 
     try {
         const uploadRecord = await Upload.findById(uploadId);
@@ -416,10 +425,9 @@ export const analyzeData = async (req, res) => {
             return res.status(404).json({ message: 'Upload record not found.' });
         }
 
-        const excelCloudinaryUrl = uploadRecord.filePath; // This is the Cloudinary URL from the DB
+        const excelCloudinaryUrl = uploadRecord.filePath;
         console.log(`Retrieving Excel from Cloudinary URL: ${excelCloudinaryUrl}`);
 
-        // Download the Excel file from Cloudinary to a temporary location for XLSX processing
         downloadedFilePath = await downloadExcelFromCloudinary(excelCloudinaryUrl);
 
         const workbook = XLSX.readFile(downloadedFilePath);
@@ -446,18 +454,17 @@ export const analyzeData = async (req, res) => {
         console.log('Chart Configuration:', JSON.stringify(configuration, null, 2));
         const imageBuffer = await chartJSNodeCanvas.renderToBuffer(configuration);
 
-        // Upload the generated chart image buffer directly to Cloudinary
         const uploadResult = await new Promise((resolve, reject) => {
             cloudinary.uploader.upload_stream({
-                folder: "charts", // Folder for charts in Cloudinary
-                public_id: `${chartType}_chart_${uploadId}_single` // Unique ID for this specific chart type for this upload
+                folder: "charts",
+                public_id: `${chartType}_chart_${uploadId}_single`
             }, (error, result) => {
                 if (error) reject(error);
                 else resolve(result);
             }).end(imageBuffer);
         });
 
-        chartUrl = uploadResult.secure_url; // Get the secure URL from Cloudinary
+        chartUrl = uploadResult.secure_url;
         console.log('Generated chart Cloudinary URL:', chartUrl);
 
         res.status(200).json({ chartData: {}, chartType, chartUrl });
@@ -467,7 +474,6 @@ export const analyzeData = async (req, res) => {
         console.error('Error analyzing data:', error);
         res.status(500).json({ message: 'Error analyzing data.', error: error.message });
     } finally {
-        // Clean up the temporary downloaded Excel file
         if (downloadedFilePath) {
             await fs.unlink(downloadedFilePath).catch(e => console.error("Error deleting temporary downloaded excel file:", e));
         }
@@ -479,7 +485,7 @@ export const generateAllCharts = async (req, res) => {
     const { xAxis, yAxis } = req.body;
     const chartTypes = ['bar', 'line', 'pie', 'doughnut', 'radar', 'bubble', 'scatter', 'area'];
     const generatedChartUrls = [];
-    let downloadedFilePath = null; // To track and delete the temporary Excel file
+    let downloadedFilePath = null;
 
     try {
         console.log(`Generating all charts for upload ID: ${uploadId}`);
@@ -488,9 +494,8 @@ export const generateAllCharts = async (req, res) => {
             return res.status(404).json({ message: 'Upload record not found.' });
         }
         console.log('Upload Record:', uploadRecord);
-        const excelCloudinaryUrl = uploadRecord.filePath; // This is the Cloudinary URL
+        const excelCloudinaryUrl = uploadRecord.filePath;
 
-        // Download the Excel file from Cloudinary to a temporary location for XLSX processing
         downloadedFilePath = await downloadExcelFromCloudinary(excelCloudinaryUrl);
 
         const workbook = XLSX.readFile(downloadedFilePath);
@@ -512,17 +517,15 @@ export const generateAllCharts = async (req, res) => {
         const height = 400;
         const chartJSNodeCanvas = new ChartJSNodeCanvas({ width, height });
 
-        // Use Promise.all to wait for all chart uploads to complete
         const chartUploadPromises = chartTypes.map(async (chartType) => {
             try {
                 const configuration = getChartConfiguration(chartType, labels, dataValues, xAxis, yAxis, jsonData);
                 const imageBuffer = await chartJSNodeCanvas.renderToBuffer(configuration);
 
-                // Upload each generated chart image to Cloudinary
                 const uploadResult = await new Promise((resolve, reject) => {
                     cloudinary.uploader.upload_stream({
                         folder: "charts",
-                        public_id: `${chartType}_chart_${uploadId}` // Unique ID for each chart type for this upload
+                        public_id: `${chartType}_chart_${uploadId}`
                     }, (error, result) => {
                         if (error) reject(error);
                         else resolve(result);
@@ -531,13 +534,12 @@ export const generateAllCharts = async (req, res) => {
                 return uploadResult.secure_url;
             } catch (renderError) {
                 console.error(`Error rendering or uploading ${chartType} chart:`, renderError);
-                return 'error-rendering-chart'; // Return a placeholder URL or error indicator
+                return 'error-rendering-chart';
             }
         });
 
-        // Wait for all chart uploads to finish
         const results = await Promise.all(chartUploadPromises);
-        generatedChartUrls.push(...results.filter(url => url !== 'error-rendering-chart')); // Filter out failed ones
+        generatedChartUrls.push(...results.filter(url => url !== 'error-rendering-chart'));
 
         console.log('Generated chart URLs:', generatedChartUrls);
         res.status(200).json({ message: 'All charts generated successfully.', chartUrls: generatedChartUrls });
@@ -547,7 +549,6 @@ export const generateAllCharts = async (req, res) => {
         console.error('Error generating all charts:', error);
         res.status(500).json({ message: 'Error generating all charts.', error: error.message });
     } finally {
-        // Clean up the temporary downloaded Excel file
         if (downloadedFilePath) {
             await fs.unlink(downloadedFilePath).catch(e => console.error("Error deleting temporary downloaded excel file:", e));
         }
@@ -574,17 +575,18 @@ export const getUploadHistory = async (req, res) => {
 export const deleteUpload = async (req, res) => {
     const { id } = req.params;
     try {
-        const uploadRecord = await Upload.findById(id); // Find the record first
+        const uploadRecord = await Upload.findById(id);
         if (!uploadRecord) {
             return res.status(404).json({ message: 'Upload history not found.' });
         }
 
         // Delete the Excel file from Cloudinary (if stored there)
         if (uploadRecord.filePath && uploadRecord.filePath.includes('res.cloudinary.com')) {
-            // Extract public_id from the Cloudinary URL.
-            // Example URL: https://res.cloudinary.com/YOUR_CLOUD_NAME/raw/upload/v1234567890/excel_files/excel-1234567890-samplefile.xlsx
-            // We need: "excel_files/excel-1234567890-samplefile"
             try {
+                // Use the stored cloudinaryPublicId if available, otherwise parse from URL
+                // Note: Your schema doesn't currently store cloudinaryPublicId.
+                // For now, rely on parsing the URL. If you want to store it,
+                // add it to Upload.js schema and the uploadFile function.
                 const urlParts = uploadRecord.filePath.split('/');
                 const versionIndex = urlParts.findIndex(part => part.startsWith('v')) + 1; // Find the version number part
                 const publicIdWithExtension = urlParts.slice(versionIndex).join('/'); // Get everything after version
