@@ -43,7 +43,7 @@ import multer from 'multer';
 import path from 'path';
 import XLSX from 'xlsx';
 import { User, Upload } from '../models/index.js';
-import { fileURLTo__filename } from 'url';
+import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
 const __filename = fileURLToPath(import.meta.url);
