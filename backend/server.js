@@ -7,7 +7,7 @@ import  connectDb  from './config/db.js';
 import uploadRoutes from './routes/uploadRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
-// import path from 'path';
+import path from 'path';
 
 console.log("current env: ",process.env.NODE_ENV);
 
@@ -16,13 +16,21 @@ const app= express()
 
 // Configure CORS to allow requests from your frontend's origin
 const corsOptions = {
-  origin: process.env.NODE_ENV === 'production'
-  ? 'https://excel-analytics-platform.onrender.com' 
-  : 'http://localhost:5173',
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    credentials: true, 
-    allowedHeaders: 'Content-Type, Authorization, *', 
-  };
+  // It's highly recommended to uncomment and use the more secure dynamic origin check for production
+  origin: (origin, callback) => {
+      console.log('Request Origin:', origin); // Log the incoming origin
+      // Make sure to include your Render frontend URL here!
+      const allowedOrigins = ['http://localhost:5173', 'https://excel-analytics-platform.onrender.com']; // <-- IMPORTANT: Add your Render frontend URL
+      if (allowedOrigins.includes(origin) || !origin) { // !origin allows same-origin requests in dev
+          callback(null, true);
+      } else {
+          callback(new Error('Not allowed by CORS'));
+      }
+  },
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  credentials: true,
+  allowedHeaders: 'Content-Type, Authorization, *',
+};
 
 //Middleware
 app.use(express.json())
