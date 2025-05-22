@@ -30,6 +30,8 @@ const protect = async (req, res, next) => {
       // Attempt to find the user by the ID from the token
       console.log('Searching for user with ID:', decoded.id);
       req.user = await User.findById(decoded.id).select('-password');
+      console.log(`[AUTH-DEBUG] User found and assigned to req.user for request originating from: ${req.originalUrl || req.url}`); // <-- Add this
+
       console.log('User found from token:', req.user);
 
 
@@ -41,6 +43,7 @@ const protect = async (req, res, next) => {
       console.log(`[AUTH] req.user._id is set to: ${req.user._id}. Calling next().`);
 
       console.log('Protect middleware successfully populated req.user. Proceeding to next middleware/controller.');
+      console.log(`[AUTH-FINAL-CHECK] Request ID: ${req.requestId}. req.user is set: ${!!req.user}. req.user._id: ${req.user._id}. Calling next().`);
 
       next(); // User found, proceed
     } catch (error) {
