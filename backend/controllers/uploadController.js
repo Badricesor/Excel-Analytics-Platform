@@ -556,6 +556,9 @@ export const generateAllCharts = async (req, res) => {
 };
 
 export const getUploadHistory = async (req, res) => {
+    console.log('*** Inside getUploadHistory Controller ***');
+    console.log('req.user at start of getUploadHistory:', req.user); // Check req.user directly here
+
     try {
         if (!req.user || !req.user._id) {
             console.error('Error: User not authenticated or user ID missing in request.');

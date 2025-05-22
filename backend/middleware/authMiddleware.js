@@ -37,6 +37,8 @@ const protect = async (req, res, next) => {
         console.log('Error: User not found with ID:', decoded.id);
         return res.status(401).json({ message: 'Not authorized, user not found' });
       }
+      
+      console.log('Protect middleware successfully populated req.user. Proceeding to next middleware/controller.');
 
       next(); // User found, proceed
     } catch (error) {
