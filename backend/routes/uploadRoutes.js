@@ -20,7 +20,7 @@ router.post('/analyze/:uploadId', protect, analyzeData);
 // router.post('/:uploadId/generate-all-charts', generateAllCharts);
 router.post('/uploads/:uploadId/generate-all-charts', protect, generateAllCharts);
 // router.post('/uploads/:uploadId/generate-all-charts-data', protect, generateAllChartsData);
-router.get('/uploads/history',  getUploadHistory); // **ENSURE THIS LINE EXISTS AND IS CORRECT**
+router.get('/uploads/history', protect, getUploadHistory); // **ENSURE THIS LINE EXISTS AND IS CORRECT**
 router.delete('/uploads/:id', protect, deleteUpload);
 
 export default router;

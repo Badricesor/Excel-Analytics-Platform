@@ -557,14 +557,57 @@ export const generateAllCharts = async (req, res) => {
 
 export const getUploadHistory = async (req, res) => {
     console.log('*** Inside getUploadHistory Controller ***');
-    console.log('req.user at start of getUploadHistory:', req.user); // Check req.user directly here
+    console.log('req.user at start of getUploadHistory:', req.user); // Initial check
+
+    let userId;
+
+    // First, try to get userId from req.user (as set by 'protect' middleware)
+    if (req.user && req.user._id) {
+        userId = req.user._id;
+        console.log(`User ID found from req.user: ${userId}`);
+    } else {
+        // Fallback: If req.user is not set by middleware, try to manually decode token
+        console.warn('req.user not set. Attempting to manually decode token for getUploadHistory.');
+        let token;
+        if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+            token = req.headers.authorization.split(' ')[1];
+        }
+
+        if (!token) {
+            console.error('Error: No token found in headers for manual decode.');
+            return res.status(401).json({ message: 'Not authorized, no token provided.' });
+        }
+
+        try {
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            console.log('Manual token decode successful. Decoded ID:', decoded.id);
+
+            if (!decoded.id || !mongoose.Types.ObjectId.isValid(decoded.id)) { // Make sure mongoose is imported if not already
+                console.error('Manual decode: Invalid user ID in token.');
+                return res.status(401).json({ message: 'Not authorized, invalid user ID in token.' });
+            }
+
+            const user = await User.findById(decoded.id).select('_id'); // Fetch just the ID to confirm existence
+            if (user) {
+                userId = user._id;
+                console.log('User ID confirmed by manual decode:', userId);
+            } else {
+                console.error('Manual decode: User not found in DB for ID:', decoded.id);
+                return res.status(401).json({ message: 'Not authorized, user not found.' });
+            }
+        } catch (error) {
+            console.error('Error during manual token verification:', error.message);
+            return res.status(401).json({ message: 'Not authorized, token failed.' });
+        }
+    }
+
+    // Now that we have userId (either from req.user or manual decode), proceed
+    if (!userId) {
+        console.error('Critical Error: User ID could not be established.');
+        return res.status(500).json({ message: 'Internal server error: User authentication failed.' });
+    }
 
     try {
-        if (!req.user || !req.user._id) {
-            console.error('Error: User not authenticated or user ID missing in request.');
-            return res.status(401).json({ message: 'User not authenticated or user ID missing.' });
-        }
-        const userId = req.user._id;
         console.log(`Workspaceing upload history for userId: ${userId}`);
         const uploadHistory = await Upload.find({ userId }).sort({ uploadDate: -1 });
         console.log(`Found ${uploadHistory.length} upload records for user ${userId}`);
@@ -574,6 +617,7 @@ export const getUploadHistory = async (req, res) => {
         res.status(500).json({ message: 'Failed to fetch upload history.', error: error.message });
     }
 };
+
 
 export const deleteUpload = async (req, res) => {
     const { id } = req.params;
