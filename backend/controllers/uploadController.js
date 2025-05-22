@@ -472,3 +472,40 @@ export const generateAllCharts = async (req, res) => {
         res.status(500).json({ message: 'Error generating all charts.', error });
     }
 };
+
+// --- Your existing getUploadHistory function ---
+export const getUploadHistory = async (req, res) => {
+    try {
+        if (!req.user || !req.user._id) {
+            console.error('Error: User not authenticated or user ID missing in request.');
+            return res.status(401).json({ message: 'User not authenticated or user ID missing.' });
+        }
+        const userId = req.user._id; // Assuming you have user authentication middleware that populates req.user
+        console.log(`Workspaceing upload history for userId: ${userId}`); // Log the user ID
+        const uploadHistory = await Upload.find({ userId }).sort({ uploadDate: -1 }); // Find uploads for the current user, sorted by date (newest first)
+        console.log(`Found ${uploadHistory.length} upload records for user ${userId}`); // Log the number of records found
+        res.status(200).json(uploadHistory);
+    } catch (error) {
+        console.error('Error fetching upload history:', error);
+        res.status(500).json({ message: 'Failed to fetch upload history.', error: error.message });
+    }
+};
+
+// --- Your existing deleteUpload function ---
+export const deleteUpload = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const upload = await Upload.findByIdAndDelete(id);
+        if (!upload) {
+            return res.status(404).json({ message: 'Upload history not found.' });
+        }
+        // Optionally, delete the physical Excel file from the server
+        if (upload.filePath) {
+            await fs.unlink(upload.filePath).catch(e => console.error("Error deleting physical file:", e));
+        }
+        res.status(200).json({ message: 'Upload history deleted successfully.' });
+    } catch (error) {
+        console.error('Error deleting upload history:', error);
+        res.status(500).json({ message: 'Failed to delete upload history.', error: error.message });
+    }
+};
