@@ -12,16 +12,14 @@ import path from 'path';
 console.log("current env: ",process.env.NODE_ENV);
 
 const app= express()
-// const __dirname = path.resolve(); 
 
 // Configure CORS to allow requests from your frontend's origin
 const corsOptions = {
   // It's highly recommended to uncomment and use the more secure dynamic origin check for production
   origin: (origin, callback) => {
-      console.log('Request Origin:', origin); // Log the incoming origin
-      // Make sure to include your Render frontend URL here!
-      const allowedOrigins = ['http://localhost:5173', 'https://excel-analytics-platform.onrender.com']; // <-- IMPORTANT: Add your Render frontend URL
-      if (allowedOrigins.includes(origin) || !origin) { // !origin allows same-origin requests in dev
+      console.log('Request Origin:', origin); 
+      const allowedOrigins = ['http://localhost:5173', 'https://excel-analytics-platform.onrender.com']; 
+      if (allowedOrigins.includes(origin) || !origin) { 
           callback(null, true);
       } else {
           callback(new Error('Not allowed by CORS'));
@@ -41,9 +39,6 @@ app.use('/api/version1/auth',authroutes)
 app.use('/api/version1', uploadRoutes);
 app.use('/api/version1/users', userRoutes);
 app.use('/api/version1/admin', adminRoutes);
-
-// app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
-// app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 const PORT= process.env.PORT || 8080
 

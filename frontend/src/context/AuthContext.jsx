@@ -59,7 +59,7 @@ export const AuthProvider = ({ children }) => {
 
   const signup = async (username, email, password, role) => {
     try {
-      const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/version1/auth/register`, { username, email, password, role });
+      const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/version1/auth/signup`, { username, email, password, role });
       localStorage.setItem('token', res.data.token);
       await fetchUserProfile(res.data.token); // Fetch profile after signup as well, if needed
       return true;

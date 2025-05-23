@@ -2,8 +2,6 @@ import express from "express";
 import { login, signup, socialLogin } from "../controllers/authController.js";
 
 
-
-
 const router= express.Router()
 
 router.post('/signup',signup)
