@@ -396,7 +396,7 @@ const UserDashboard = () => {
                                                         className="w-full h-auto"
                                                         onError={(e) => { e.target.onerror = null; e.target.src = '/placeholder-error-image.png'; console.error('Error loading image (all charts):', url, e); }}
                                                     />
-                                                    <button onClick={() => handleDownloadChart(url)} className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 mt-2">
+                                                    <button onClick={() => handleDownloadChart(url)} className="inline-flex items-center  px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-rose-500 cursor-pointer hover:text-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 mt-2">
                                                         <ArrowDownTrayIcon className="h-5 w-5 text-sm inline-block mr-2" /> Download
                                                     </button>
                                                 </div>
