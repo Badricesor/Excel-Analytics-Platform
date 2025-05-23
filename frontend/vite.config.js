@@ -6,10 +6,10 @@ import path from 'path';
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
-  const isProduction = mode === 'production';
+  // const isProduction = mode === 'production';
 
   return {
-    base: isProduction ? '/Excel-Analytics-Platform/' : '/',
+    base:  '/',
     plugins: [tailwindcss(),react()],
   resolve: {
     alias: {
