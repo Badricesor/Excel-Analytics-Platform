@@ -1,7 +1,7 @@
 import { Routes, Route } from 'react-router-dom';
 import React from 'react';
 import Signup from './pages/Signup.jsx';
-import UserDashboard from './pages/UserDashboard.jsx';
+import UserDashboard from './pages/userDashboard.jsx';
 import Login from './pages/Login.jsx';
 import WelcomePage from './pages/WelcomePage.jsx';
 import AdminDashboard from './pages/AdminDashboard.jsx';
@@ -9,7 +9,6 @@ import { AuthProvider } from './context/AuthContext.jsx';
 import ProfilePage from './pages/ProfilePage.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx'; // Import it
 import AdminProtectedRoute from './components/AdminprotectedRoute.jsx'; // Import it
-
 
 function App() {
   return (
