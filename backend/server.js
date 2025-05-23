@@ -18,7 +18,7 @@ const corsOptions = {
   // It's highly recommended to uncomment and use the more secure dynamic origin check for production
   origin: (origin, callback) => {
       console.log('Request Origin:', origin); 
-      const allowedOrigins = ['http://localhost:5173', 'https://excel-analytics-platform.onrender.com']; 
+      const allowedOrigins = ['http://localhost:5173', 'https://excel-analytics-platform.onrender.com',"https://excel-analytics-platform-frontend-w56n.onrender.com"]; 
       if (allowedOrigins.includes(origin) || !origin) { 
           callback(null, true);
       } else {
