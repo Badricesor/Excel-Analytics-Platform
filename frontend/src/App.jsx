@@ -10,6 +10,7 @@ import ProfilePage from './pages/ProfilePage.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx'; // Import it
 import AdminProtectedRoute from './components/AdminprotectedRoute.jsx'; // Import it
 
+
 function App() {
   return (
     <AuthProvider>
