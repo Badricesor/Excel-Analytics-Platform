@@ -7,7 +7,6 @@ import  connectDb  from './config/db.js';
 import uploadRoutes from './routes/uploadRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
-import cookieParser from 'cookie-parser';
 import path from 'path';
 
 console.log("current env: ",process.env.NODE_ENV);
@@ -19,7 +18,7 @@ const corsOptions = {
   // It's highly recommended to uncomment and use the more secure dynamic origin check for production
   origin: (origin, callback) => {
       console.log('Request Origin:', origin); 
-      const allowedOrigins = ['http://localhost:5173', 'https://excel-analytics-platform-1backend.onrender.com',"https://excel-analytics-platform-frontend-w56n.onrender.com"]; 
+      const allowedOrigins = ['http://localhost:5173', 'https://excel-analytics-platform.onrender.com',"https://excel-analytics-platform-frontend-w56n.onrender.com"]; 
       if (allowedOrigins.includes(origin) || !origin) { 
           callback(null, true);
       } else {
@@ -34,7 +33,6 @@ const corsOptions = {
 //Middleware
 app.use(express.json())
 app.use(cors(corsOptions));
-app.use(cookieParser());
 
 //Routes
 app.use('/api/version1/auth',authroutes)

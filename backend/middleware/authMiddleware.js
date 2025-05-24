@@ -1,45 +1,59 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/userModel.js';
-import mongoose from 'mongoose';
+import mongoose from "mongoose"
 
 const protect = async (req, res, next) => {
   console.log('*** Auth Middleware Start ***');
   console.log('Headers:', req.headers);
-  console.log('Cookies:', req.cookies);
+  console.log('JWT Secret from env:', process.env.JWT_SECRET);
 
-  let token = req.cookies.token; // First try to get token from cookies
+  let token;
 
-  // Fallback: if no cookie token, try Authorization header
-  if (!token && req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
-    token = req.headers.authorization.split(' ')[1];
+  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+    try {
+      token = req.headers.authorization.split(' ')[1];
+      console.log('Token found:', token);
+
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      console.log('Token decoded:', decoded);
+      console.log('Decoded ID from token:', decoded.id);
+
+      // const user = await User.findById(decoded.id).select('-password');
+      // console.log('Backend Found User:', user); // Log the found user
+      // req.user = user;
+
+      if (!decoded.id || !mongoose.Types.ObjectId.isValid(decoded.id)) {
+        console.log('Error: Invalid user ID in token');
+        return res.status(401).json({ message: 'Not authorized, invalid user ID in token' });
+      }
+
+      // Attempt to find the user by the ID from the token
+      console.log('Searching for user with ID:', decoded.id);
+      req.user = await User.findById(decoded.id).select('-password');
+      console.log(`[AUTH-DEBUG] User found and assigned to req.user for request originating from: ${req.originalUrl || req.url}`); // <-- Add this
+
+      console.log('User found from token:', req.user);
+
+
+      if (!req.user) {
+        console.log('Error: User not found with ID:', decoded.id);
+        return res.status(401).json({ message: 'Not authorized, user not found' });
+      }
+      // ADD THIS LOG:
+      console.log(`[AUTH] req.user._id is set to: ${req.user._id}. Calling next().`);
+
+      console.log('Protect middleware successfully populated req.user. Proceeding to next middleware/controller.');
+      console.log(`[AUTH-FINAL-CHECK] Request ID: ${req.requestId}. req.user is set: ${!!req.user}. req.user._id: ${req.user._id}. Calling next().`);
+
+      next(); // User found, proceed
+    } catch (error) {
+      console.error('Error during token verification or user lookup:', error);
+      return res.status(401).json({ message: 'Not authorized, token failed' });
+    }
   }
 
   if (!token) {
-    console.log('No token found in cookies or headers');
     return res.status(401).json({ message: 'Not authorized, no token' });
-  }
-
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    console.log('Token decoded:', decoded);
-
-    if (!decoded.id || !mongoose.Types.ObjectId.isValid(decoded.id)) {
-      console.log('Invalid user ID in token');
-      return res.status(401).json({ message: 'Invalid token data' });
-    }
-
-    req.user = await User.findById(decoded.id).select('-password');
-
-    if (!req.user) {
-      console.log('User not found');
-      return res.status(401).json({ message: 'Not authorized, user not found' });
-    }
-
-    console.log(`[AUTH] User ${req.user._id} authenticated. Proceeding.`);
-    next();
-  } catch (error) {
-    console.error('Token verification failed:', error);
-    return res.status(401).json({ message: 'Not authorized, token failed' });
   }
 };
 
@@ -51,4 +65,4 @@ const admin = (req, res, next) => {
   }
 };
 
-export { protect, admin };
+export { protect, admin }

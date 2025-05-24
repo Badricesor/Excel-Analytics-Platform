@@ -1,0 +1,6 @@
+node_modules
+.env
+.git
+.gitignore
+npm-debug.log
+# Any other local development-specific files/folders you don't want in the image
