@@ -15,7 +15,9 @@ export const AuthProvider = ({ children }) => {
     try {
       const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/version1/users/profile`, {
         headers: { Authorization: `Bearer ${token}` },
-      });
+        withCredentials:true
+      },
+    );
       setUser(res.data);
       setLoading(false);
       console.log('User profile fetched successfully:', res.data);
