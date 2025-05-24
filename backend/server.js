@@ -48,6 +48,10 @@ app.use(express.json());
 
 // Apply the standard CORS middleware
 app.use(cors(corsOptions));
+app.use(cors({
+    origin:true,
+    credentials: true
+}))
 
 // *** NEW AGGRESSIVE CORS OVERRIDE (Attempt to force the header) ***
 app.use((req, res, next) => {
