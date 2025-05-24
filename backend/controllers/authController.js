@@ -1,9 +1,9 @@
 import User from '../models/userModel.js';
-import  { genSalt, hash } from "bcryptjs"
-import {generateToken} from "../utils/generateToken.js"
+import { genSalt, hash } from "bcryptjs";
+import { generateToken } from "../utils/generateToken.js";
 import { v4 as uuidv4 } from 'uuid'; // unique IDs
 
-// signup
+// ------------------- SIGNUP -------------------
 const signup = async (req, res) => {
   const { username, email, password, role } = req.body;
 
@@ -13,9 +13,9 @@ const signup = async (req, res) => {
       return res.status(400).json({ message: 'User already exists' });
     }
 
-     // password hashing
-     const salt = await genSalt(10);
-     const hashedPassword = await hash(password, salt);
+    // Hash password
+    const salt = await genSalt(10);
+    const hashedPassword = await hash(password, salt);
 
     const user = await User.create({
       username,
@@ -25,12 +25,21 @@ const signup = async (req, res) => {
     });
 
     if (user) {
+      const token = generateToken(user._id);
+
+      // Set cookie
+      res.cookie('token', token, {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'None',
+        maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+      });
+
       res.status(201).json({
         _id: user._id,
         username: user.username,
         email: user.email,
         role: user.role,
-        token: generateToken(user._id,role),
       });
     } else {
       res.status(400).json({ message: 'Invalid user data' });
@@ -40,8 +49,7 @@ const signup = async (req, res) => {
   }
 };
 
-// Login user
-
+// ------------------- LOGIN -------------------
 const login = async (req, res) => {
   const { email, password } = req.body;
 
@@ -49,12 +57,21 @@ const login = async (req, res) => {
     const user = await User.findOne({ email });
 
     if (user && (await user.matchPassword(password))) {
+      const token = generateToken(user._id);
+
+      // Set cookie
+      res.cookie('token', token, {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'None',
+        maxAge: 30 * 24 * 60 * 60 * 1000,
+      });
+
       res.json({
         _id: user._id,
         username: user.username,
         email: user.email,
         role: user.role,
-        token: generateToken(user._id),
       });
     } else {
       res.status(401).json({ message: 'Invalid email or password' });
@@ -64,24 +81,19 @@ const login = async (req, res) => {
   }
 };
 
-// login with google
+// ------------------- SOCIAL LOGIN -------------------
 const socialLogin = async (req, res) => {
-  const { provider, tokenOrProfile } = req.body; 
+  const { provider, tokenOrProfile } = req.body;
 
   try {
     let email, username;
+
     if (provider === 'google') {
-      //  Conceptual Example - Replace with your actual Google token verification
-      //  You'll likely use a library like 'google-auth-library'.
-      console.log('Verifying Google token:', tokenOrProfile);
-      // For demonstration purposes, we'll just set some dummy values.
+      // Simulate Google token validation
       email = 'google.user@example.com';
       username = `Google User ${uuidv4().substring(0, 8)}`;
     } else if (provider === 'facebook') {
-      //  Conceptual Example - Replace with your actual Facebook token verification
-      //  You'll likely use the Facebook Graph API or a library.
-      console.log('Verifying Facebook token:', tokenOrProfile);
-      // For demonstration purposes, we'll just set some dummy values.
+      // Simulate Facebook token validation
       email = 'facebook.user@example.com';
       username = `Facebook User ${uuidv4().substring(0, 8)}`;
     } else {
@@ -92,34 +104,36 @@ const socialLogin = async (req, res) => {
       return res.status(400).json({ message: 'Could not retrieve email from social provider.' });
     }
 
-    // 2. Check if the user exists with this email.
     let user = await User.findOne({ email });
 
-    // 3. If the user doesn't exist, create them.
     if (!user) {
-      // Generate a random password (since the user didn't set one)
       const randomPassword = uuidv4();
-      const salt = await bcrypt.genSalt(10);
-      const hashedPassword = await bcrypt.hash(randomPassword, salt);
+      const salt = await genSalt(10);
+      const hashedPassword = await hash(randomPassword, salt);
 
       user = await User.create({
-        username: username || email.split('@')[0], // Use email prefix as default username
+        username: username || email.split('@')[0],
         email,
         password: hashedPassword,
-        role: 'user', // Default role for social signup
+        role: 'user',
       });
     }
 
-    // 4. Generate a JWT.
     const token = generateToken(user._id);
 
-    // 5.  Send the user data and token back to the client.
+    // Set cookie
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'None',
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+    });
+
     res.json({
       _id: user._id,
       username: user.username,
       email: user.email,
       role: user.role,
-      token,
     });
   } catch (error) {
     console.error('Social login error:', error);
@@ -127,11 +141,4 @@ const socialLogin = async (req, res) => {
   }
 };
 
-// // Generate JWT
-// const generateToken = (id) => {
-//   return jwt.sign({ id }, process.env.JWT_SECRET, {
-//     expiresIn: '30d',
-//   });
-// };
-
-export { signup, login , socialLogin };
+export { signup, login, socialLogin };
