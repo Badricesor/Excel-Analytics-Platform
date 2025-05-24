@@ -15,31 +15,9 @@ const app= express()
 
 // Configure CORS to allow requests from your frontend's origin
 const corsOptions = {
-    origin: (origin, callback) => {
-        console.log('Request Origin:', origin); // Crucial for debugging on Render logs
-        const allowedOrigins = [
-            'http://localhost:5173', // For local development
-            'https://excel-analytics-platform-frontend-w56n.onrender.com' // Your deployed frontend
-        ];
-
-        // If no origin is provided (e.g., same-origin requests, or tools like Postman)
-        if (!origin) {
-            console.log('Origin is null/undefined. Allowing request.');
-            return callback(null, true);
-        }
-
-        // Check if the request origin is in our allowed list
-        if (allowedOrigins.includes(origin)) {
-            console.log(`Origin ${origin} is allowed.`);
-            return callback(null, true);
-        } else {
-            console.log(`Origin ${origin} NOT allowed by CORS. Expected one of: ${allowedOrigins.join(', ')}`);
-            // If it's not allowed, create an error.
-            return callback(new Error('Not allowed by CORS'));
-        }
-    },
+    origin: '*',
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-  credentials: true,
+ 
   allowedHeaders: 'Content-Type, Authorization, *',
 };
 
