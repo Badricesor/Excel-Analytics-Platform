@@ -14,8 +14,8 @@ export const AuthProvider = ({ children }) => {
     console.log('Token in fetchUserProfile:', token);
     try {
       const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/version1/users/profile`, {
-        headers: { Authorization: `Bearer ${token}` },
-        withCredentials:true
+        withCredentials:true,
+        headers: { Authorization: `Bearer ${token}` }
       },
     );
       setUser(res.data);
@@ -44,7 +44,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/version1/auth/login`, { email, password });
+      const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/version1/auth/login`, { email, password },{withCredentials:true});
       localStorage.setItem('token', res.data.token);
       console.log('Login successful, token:', res.data.token);
       console.log('Calling fetchUserProfile...');
@@ -61,7 +61,7 @@ export const AuthProvider = ({ children }) => {
 
   const signup = async (username, email, password, role) => {
     try {
-      const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/version1/auth/signup`, { username, email, password, role });
+      const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/version1/auth/signup`, { username, email, password, role }, {withCredentials:true});
       localStorage.setItem('token', res.data.token);
       await fetchUserProfile(res.data.token); // Fetch profile after signup as well, if needed
       return true;
